@@ -38,11 +38,12 @@ def _upsert_cards(conn: sqlite3.Connection, theme_id: int, theme: ThemeContent) 
         diagram = card.diagram.model_dump_json() if card.diagram else None
         conn.execute(
             "INSERT INTO cards (theme_id, titre, explication_orale, points_json, schema, "
-            "source_label, source_url, ordre) VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
+            "source_label, source_url, essentielle, ordre) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
             "ON CONFLICT(theme_id, titre) DO UPDATE SET "
             "explication_orale = excluded.explication_orale, points_json = excluded.points_json, "
             "schema = excluded.schema, source_label = excluded.source_label, "
-            "source_url = excluded.source_url, ordre = excluded.ordre",
+            "source_url = excluded.source_url, essentielle = excluded.essentielle, "
+            "ordre = excluded.ordre",
             (
                 theme_id,
                 card.titre,
@@ -51,6 +52,7 @@ def _upsert_cards(conn: sqlite3.Connection, theme_id: int, theme: ThemeContent) 
                 diagram,
                 card.source_label,
                 card.source_url,
+                int(card.essentielle),
                 ordre,
             ),
         )

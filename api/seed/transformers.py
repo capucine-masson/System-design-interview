@@ -75,6 +75,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Self-attention",
+            essentielle=True,
             accroche=(
                 "Pour chaque token, la self-attention calcule une moyenne pondérée de "
                 "tous les autres tokens, avec des poids qui dépendent du contenu."
@@ -115,6 +116,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Attention multi-têtes",
+            essentielle=True,
             accroche=(
                 "Au lieu d'une seule attention, on en lance plusieurs en parallèle sur des "
                 "sous-espaces plus petits, pour capter plusieurs types de relations."
@@ -169,6 +171,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Masque causal et génération autorégressive",
+            essentielle=True,
             accroche=(
                 "Un modèle de langage génère un token à la fois, et le masque causal "
                 "l'empêche de regarder les tokens futurs pendant l'entraînement."
@@ -236,6 +239,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Complexité et fenêtre de contexte",
+            essentielle=True,
             accroche=(
                 "L'attention compare chaque token à tous les autres : son coût grandit "
                 "avec le carré de la longueur, ce qui limite la fenêtre de contexte."

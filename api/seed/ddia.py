@@ -107,6 +107,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Réplication",
+            essentielle=True,
             accroche=(
                 "Répliquer, c'est garder plusieurs copies des données pour la "
                 "disponibilité, la latence et le débit de lecture."
@@ -135,6 +136,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Partitionnement",
+            essentielle=True,
             accroche=(
                 "Quand les données dépassent une machine, on les découpe en "
                 "partitions réparties sur plusieurs nœuds."
@@ -156,6 +158,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Transactions et isolation",
+            essentielle=True,
             accroche=(
                 "Une transaction regroupe plusieurs opérations en une unité "
                 "tout-ou-rien ; l'isolation précise ce que voient les transactions concurrentes."
@@ -194,6 +197,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Cohérence et consensus",
+            essentielle=True,
             accroche=(
                 "Pour que plusieurs nœuds s'accordent, on utilise des garanties "
                 "de cohérence fortes et des algorithmes de consensus."

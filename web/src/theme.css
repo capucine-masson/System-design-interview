@@ -11,6 +11,7 @@
   --color-success-bg: #e3f5f3;
   --color-accent-bg: #fef0ec;
   --color-on-accent: #ffffff;
+  --color-essential: #0891b2;
 
   --space-1: 4px;
   --space-2: 8px;
@@ -42,6 +43,7 @@
     --color-success-bg: #12302e;
     --color-accent-bg: #3a1d17;
     --color-on-accent: #151227;
+    --color-essential: #22d3ee;
     --shadow: 0 1px 3px rgb(0 0 0 / 40%);
     --shadow-modal: 0 12px 40px rgb(0 0 0 / 60%);
     --color-backdrop: rgb(0 0 0 / 55%);
@@ -61,6 +63,7 @@
   --color-success-bg: #12302e;
   --color-accent-bg: #3a1d17;
   --color-on-accent: #151227;
+  --color-essential: #22d3ee;
   --shadow: 0 1px 3px rgb(0 0 0 / 40%);
   --shadow-modal: 0 12px 40px rgb(0 0 0 / 60%);
   --color-backdrop: rgb(0 0 0 / 55%);
@@ -352,6 +355,24 @@ a {
   transform: translateY(-2px);
 }
 
+.flip-star {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  width: 20px;
+  height: 20px;
+  color: var(--color-essential);
+  pointer-events: none;
+}
+
+.modal-star {
+  width: 20px;
+  height: 20px;
+  margin-left: var(--space-2);
+  color: var(--color-essential);
+  vertical-align: -3px;
+}
+
 .flip-actions {
   position: absolute;
   right: var(--space-2);
@@ -359,6 +380,7 @@ a {
 }
 
 .flip-title {
+  padding-right: var(--space-4);
   display: -webkit-box;
   overflow: hidden;
   font-size: 1rem;
@@ -401,6 +423,10 @@ a {
   border-radius: var(--radius);
   box-shadow: var(--shadow-modal);
   animation: modal-pop var(--transition);
+}
+
+.modal > * {
+  flex-shrink: 0;
 }
 
 .modal h2 {
@@ -497,6 +523,7 @@ a {
 .diagram {
   width: 100%;
   max-width: 920px;
+  max-height: 40vh;
   height: auto;
 }
 

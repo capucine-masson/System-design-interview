@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import type { Card, Statut } from "../types";
 import Diagram from "./Diagram";
 import ProgressButtons from "./ProgressButtons";
+import StarIcon from "./StarIcon";
 
 interface FlipCardProps {
   card: Card;
@@ -39,6 +40,7 @@ export default function FlipCard({ card, pending, onProgress }: FlipCardProps) {
     <article className="flip-card">
       <button type="button" className="flip-front" aria-haspopup="dialog" onClick={() => setOpen(true)}>
         <span className="flip-title">{card.titre}</span>
+        {card.essentielle && <StarIcon className="flip-star" />}
         <span className="flip-hint">Ouvrir la carte →</span>
       </button>
       <div className="flip-actions">{progress}</div>
@@ -52,7 +54,10 @@ export default function FlipCard({ card, pending, onProgress }: FlipCardProps) {
               aria-label={card.titre}
               onClick={(event) => event.stopPropagation()}
             >
-              <h2>{card.titre}</h2>
+              <h2>
+                {card.titre}
+                {card.essentielle && <StarIcon className="modal-star" />}
+              </h2>
               <p className="flip-accroche">{card.accroche}</p>
               <ol className="flip-points">
                 {card.points.map((point) => (

@@ -9,7 +9,8 @@ MIGRATIONS_DIR = Path(__file__).resolve().parent / "migrations"
 def connect(db_path: Path) -> sqlite3.Connection:
     """Ouvre une connexion SQLite (clés étrangères activées)."""
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(db_path)
+    # Une connexion par requête, mais FastAPI peut l'ouvrir et l'utiliser dans deux threads.
+    conn = sqlite3.connect(db_path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn

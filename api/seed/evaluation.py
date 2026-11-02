@@ -31,6 +31,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Commencer par l'analyse d'erreurs",
+            essentielle=True,
             accroche=(
                 "Avant d'écrire la moindre métrique, je lis des traces réelles et "
                 "je note ce qui ne va pas."
@@ -52,6 +53,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Construire un jeu de test",
+            essentielle=True,
             accroche=(
                 "Le jeu de test est un échantillon représentatif des vraies entrées, "
                 "complété si besoin par des cas synthétiques bien structurés."
@@ -87,6 +89,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="LLM-as-judge",
+            essentielle=True,
             accroche=(
                 "Un juge LLM note automatiquement les sorties sur un critère précis, "
                 "à condition d'être cadré et validé."
@@ -105,6 +108,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Valider le juge",
+            essentielle=True,
             accroche=(
                 "Un juge n'est fiable que s'il est mesuré contre des étiquettes "
                 "humaines, comme n'importe quel classifieur."

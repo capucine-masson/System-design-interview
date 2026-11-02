@@ -13,6 +13,7 @@ THEME = ThemeContent(
     cards=[
         CardContent(
             titre="Un bon design est discret",
+            essentielle=True,
             accroche=(
                 "Un bon système se reconnaît à ce qu'il ne fait pas parler de lui : "
                 "peu d'incidents, peu de surprises."
@@ -29,6 +30,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Minimiser l'état",
+            essentielle=True,
             accroche=(
                 "L'état est ce qui rend les systèmes difficiles : on peut redémarrer "
                 "un service sans état, pas une base corrompue."
@@ -88,6 +90,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Sortir le travail lent de la requête",
+            essentielle=True,
             accroche=(
                 "Une requête utilisateur renvoie vite le minimum utile ; le reste "
                 "part en tâche de fond."
@@ -176,6 +179,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Prévoir les pannes",
+            essentielle=True,
             accroche=(
                 "Tout composant finira par tomber : je décide à l'avance comment le système réagit."
             ),

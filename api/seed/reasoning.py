@@ -30,6 +30,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Test-time compute",
+            essentielle=True,
             accroche=(
                 "Le test-time compute, c'est dépenser du calcul à l'inférence pour "
                 "améliorer la réponse, au lieu d'agrandir le modèle."
@@ -65,6 +66,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Échantillonnage parallèle",
+            essentielle=True,
             accroche=("On génère plusieurs réponses candidates, puis on en choisit une."),
             points=[
                 "Best-of-N : on tire N réponses et on garde celle que juge le "
@@ -108,6 +110,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Apprentissage par renforcement pour raisonner",
+            essentielle=True,
             accroche=(
                 "On entraîne le modèle avec une récompense quand sa réponse finale "
                 "est correcte, et il apprend seul à raisonner plus longuement."
@@ -180,6 +183,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Quand payer pour la réflexion ?",
+            essentielle=True,
             accroche=(
                 "Un modèle qui réfléchit coûte plus cher et répond plus lentement : "
                 "je le réserve aux tâches qui en profitent."

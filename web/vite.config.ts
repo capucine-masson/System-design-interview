@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
     server: { port: frontPort, strictPort: true },
     test: { environment: "jsdom", setupFiles: ["./src/test-setup.ts"] },
     define: {
-      "import.meta.env.VITE_API_URL": JSON.stringify(`http://localhost:${apiPort}`),
+      "import.meta.env.VITE_API_URL": JSON.stringify(`http://127.0.0.1:${apiPort}`),
     },
   };
 });

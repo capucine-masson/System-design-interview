@@ -13,6 +13,7 @@ THEME = ThemeContent(
     cards=[
         CardContent(
             titre="Structurer un bon prompt",
+            essentielle=True,
             accroche=(
                 "Un bon prompt est une spécification : il dit la tâche, le contexte, "
                 "le format attendu et ce qui est interdit."
@@ -31,6 +32,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Zero-shot et few-shot",
+            essentielle=True,
             accroche=(
                 "En zero-shot on décrit seulement la tâche ; en few-shot on ajoute "
                 "quelques exemples entrée-sortie dans le prompt."
@@ -84,6 +86,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Chain-of-thought",
+            essentielle=True,
             accroche=(
                 "Demander au modèle de raisonner étape par étape avant de répondre "
                 "améliore souvent les tâches de logique et de calcul."
@@ -104,6 +107,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Self-consistency",
+            essentielle=True,
             accroche=(
                 "On génère plusieurs raisonnements indépendants et on garde la "
                 "réponse la plus fréquente."

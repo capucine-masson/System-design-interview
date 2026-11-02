@@ -51,4 +51,5 @@ export interface Card {
   source_label: string | null;
   source_url: string | null;
   statut: Statut | null;
+  essentielle: boolean;
 }

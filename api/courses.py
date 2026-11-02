@@ -9,7 +9,7 @@ from api.course_models import CardOut, Diagram, Statut, ThemeOut
 CARD_SELECT = (
     "SELECT c.id, t.slug AS theme_slug, c.titre, c.explication_orale, c.points_json, "
     "c.schema, c.source_label, COALESCE(c.source_url, t.source_url) AS source_url, "
-    "p.statut AS statut "
+    "p.statut AS statut, c.essentielle AS essentielle "
     "FROM cards c JOIN themes t ON t.id = c.theme_id "
     "LEFT JOIN card_progress p ON p.card_id = c.id "
 )
@@ -27,6 +27,7 @@ def _to_card(row: sqlite3.Row) -> CardOut:
         source_label=row["source_label"],
         source_url=row["source_url"],
         statut=row["statut"],
+        essentielle=bool(row["essentielle"]),
     )
 
 

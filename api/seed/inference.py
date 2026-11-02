@@ -13,6 +13,7 @@ THEME = ThemeContent(
     cards=[
         CardContent(
             titre="Prefill et decode : deux régimes",
+            essentielle=True,
             accroche=(
                 "Servir un LLM, c'est deux phases très différentes : lire le prompt "
                 "d'un coup, puis générer la réponse token par token."
@@ -32,6 +33,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="KV cache",
+            essentielle=True,
             accroche=(
                 "Le KV cache garde les clés et valeurs déjà calculées pour ne pas "
                 "refaire l'attention sur tout le passé à chaque nouveau token."
@@ -72,6 +74,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Quantization",
+            essentielle=True,
             accroche=(
                 "Quantifier, c'est stocker poids et parfois activations avec moins de "
                 "bits pour réduire la mémoire et accélérer la lecture."
@@ -90,6 +93,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Batching continu",
+            essentielle=True,
             accroche=(
                 "Le batching continu insère de nouvelles requêtes dans le batch dès "
                 "qu'une autre se termine, au lieu d'attendre la fin du lot."

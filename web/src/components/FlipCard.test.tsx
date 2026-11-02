@@ -5,6 +5,13 @@ import { CARD } from "../test/fixtures";
 import FlipCard from "./FlipCard";
 
 describe("FlipCard", () => {
+  it("affiche une étoile uniquement pour les cartes primordiales", () => {
+    const { rerender } = render(<FlipCard card={CARD} pending={false} onProgress={vi.fn()} />);
+    expect(screen.queryByRole("img", { name: "Carte primordiale" })).not.toBeInTheDocument();
+    rerender(<FlipCard card={{ ...CARD, essentielle: true }} pending={false} onProgress={vi.fn()} />);
+    expect(screen.getByRole("img", { name: "Carte primordiale" })).toBeInTheDocument();
+  });
+
   it("montre le titre sans pop-up au départ", () => {
     render(<FlipCard card={CARD} pending={false} onProgress={vi.fn()} />);
     expect(screen.getByRole("button", { name: /Self-attention/ })).toBeInTheDocument();

@@ -13,6 +13,7 @@ THEME = ThemeContent(
     cards=[
         CardContent(
             titre="Qu'est-ce qu'un agent LLM ?",
+            essentielle=True,
             accroche=(
                 "Un agent, c'est un LLM utilisé comme contrôleur : il décide des "
                 "actions à faire, appelle des outils et boucle jusqu'à atteindre l'objectif."
@@ -111,6 +112,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="La boucle de contrôle",
+            essentielle=True,
             accroche=(
                 "Au cœur d'un agent, il y a une boucle observer, décider, agir, qu'il faut borner."
             ),
@@ -135,6 +137,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Garde-fous et sécurité",
+            essentielle=True,
             accroche=(
                 "Plus l'agent peut agir, plus il faut encadrer ce qu'il a le droit de faire."
             ),
@@ -188,6 +191,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Agent ou workflow ?",
+            essentielle=True,
             accroche=(
                 "Avant de construire un agent, je me demande si un enchaînement "
                 "d'étapes fixe ne suffirait pas."

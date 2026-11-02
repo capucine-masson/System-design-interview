@@ -53,6 +53,7 @@ class CardContent(BaseModel):
     points: list[str] = Field(min_length=MIN_POINTS, max_length=MAX_POINTS)
     source_label: str = Field(min_length=1)
     source_url: str | None = None
+    essentielle: bool = False
     diagram: Diagram | None = None
 
 
@@ -90,6 +91,7 @@ class CardOut(BaseModel):
     source_label: str | None
     source_url: str | None
     statut: Statut | None
+    essentielle: bool
 
 
 class ProgressIn(BaseModel):

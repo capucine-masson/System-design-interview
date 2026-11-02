@@ -16,6 +16,7 @@ export const CARD: Card = {
   source_label: "The Illustrated Transformer",
   source_url: "https://example.org/source",
   statut: null,
+  essentielle: false,
 };
 
 export const CARD_2: Card = { ...CARD, id: 2, titre: "Tokenisation", diagram: null, statut: "a_revoir" };

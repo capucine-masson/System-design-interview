@@ -28,6 +28,7 @@ THEME = ThemeContent(
     cards=[
         CardContent(
             titre="Pourquoi le RAG",
+            essentielle=True,
             accroche=(
                 "Le RAG donne au modèle les bons documents au moment de répondre, "
                 "au lieu de compter sur sa mémoire."
@@ -66,6 +67,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Chunking",
+            essentielle=True,
             accroche=(
                 "Découper les documents en morceaux de bonne taille est souvent le "
                 "réglage qui influence le plus la qualité du RAG."
@@ -154,6 +156,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Reranking",
+            essentielle=True,
             accroche=(
                 "On récupère large avec une recherche rapide, puis un modèle plus "
                 "précis réordonne les meilleurs candidats."
@@ -195,6 +198,7 @@ THEME = ThemeContent(
         ),
         CardContent(
             titre="Évaluer la recherche",
+            essentielle=True,
             accroche=(
                 "On évalue d'abord la récupération seule : a-t-on trouvé les bons "
                 "passages, et bien classés ?"

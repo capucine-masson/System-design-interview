@@ -75,6 +75,20 @@ def test_card_links_are_https() -> None:
     assert all(urlparse(u).scheme == "https" for u in urls)
 
 
+@pytest.mark.parametrize("theme", THEMES, ids=lambda t: t.slug)
+def test_each_theme_marks_a_few_essential_cards(theme: ThemeContent) -> None:
+    """Chaque thème signale quelques cartes primordiales, pas la majorité."""
+    essential = sum(card.essentielle for card in theme.cards)
+    assert 1 <= essential <= len(theme.cards) // 2
+
+
+def test_essential_flag_is_exposed_by_api(client: TestClient, seeded: sqlite3.Connection) -> None:
+    """L'API expose le drapeau « primordiale » stocké en base."""
+    cards = client.get("/api/themes/transformers/cards").json()
+    expected = {c.titre for c in THEMES[0].cards if c.essentielle}
+    assert {c["titre"] for c in cards if c["essentielle"]} == expected
+
+
 def test_all_nine_themes_are_registered() -> None:
     """Les neuf thèmes demandés sont présents, avec des slugs uniques."""
     slugs = [t.slug for t in THEMES]
