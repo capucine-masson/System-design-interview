@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "../api";
-import { ANSWERED, AWAITING, FINISHED_SD, SD_SESSION, STORED_SCENE } from "../test/sdFixtures";
+import { ANSWERED, AWAITING, BUNDLE, FINISHED_SD, SD_SESSION, STORED_SCENE } from "../test/sdFixtures";
 import SystemDesignSession from "./SystemDesignSession";
 
 const canvas = vi.hoisted(() => ({
@@ -55,6 +55,7 @@ describe("SystemDesignSession", () => {
     vi.mocked(api.getSdSession).mockResolvedValue(SD_SESSION);
     vi.mocked(api.getScene).mockResolvedValue(null);
     vi.mocked(api.putElapsed).mockResolvedValue(undefined);
+    vi.mocked(api.getCorrection).mockResolvedValue(null);
   });
 
   it("affiche le brief, le chat, le minuteur et le canvas, sans aucun appel IA", async () => {
@@ -122,15 +123,71 @@ describe("SystemDesignSession", () => {
       order.push("finish");
       return FINISHED_SD;
     });
+    vi.mocked(api.requestCorrection).mockResolvedValue(BUNDLE);
     renderPage();
     await userEvent.click(await screen.findByRole("button", { name: "Terminer et obtenir la correction" }));
     expect(api.finishSdSession).not.toHaveBeenCalled();
     await userEvent.click(screen.getByRole("button", { name: "Oui, terminer" }));
-    expect(await screen.findByText(/La correction détaillée arrivera/)).toBeInTheDocument();
+    expect(await screen.findByText(/Ton schéma et ta discussion sont conservés/)).toBeInTheDocument();
     expect(order).toEqual(["flush", "finish"]); // le dernier schéma est enregistré avant la clôture
     expect(screen.getByTestId("canvas")).toHaveTextContent("lecture seule");
     expect(screen.getByLabelText("Ton message")).toBeDisabled();
     expect(api.requestSdReply).not.toHaveBeenCalled();
+  });
+
+  it("demande la correction juste après avoir terminé et l'affiche", async () => {
+    vi.mocked(api.finishSdSession).mockResolvedValue(FINISHED_SD);
+    vi.mocked(api.requestCorrection).mockResolvedValue(BUNDLE);
+    renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "Terminer et obtenir la correction" }));
+    expect(api.requestCorrection).not.toHaveBeenCalled(); // pas avant la confirmation
+    await userEvent.click(screen.getByRole("button", { name: "Oui, terminer" }));
+    expect(await screen.findByRole("region", { name: "Correction" })).toBeInTheDocument();
+    expect(api.requestCorrection).toHaveBeenCalledWith(5);
+    expect(screen.getByText("Solution de référence")).toBeInTheDocument();
+    expect(screen.getByText(/Ce que l'interviewer te cachait/)).toBeInTheDocument();
+  });
+
+  it("propose de réessayer la correction si elle échoue, sans perdre la session terminée", async () => {
+    vi.mocked(api.finishSdSession).mockResolvedValue(FINISHED_SD);
+    vi.mocked(api.requestCorrection)
+      .mockRejectedValueOnce(new Error("Mistral est injoignable"))
+      .mockResolvedValueOnce(BUNDLE);
+    renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "Terminer et obtenir la correction" }));
+    await userEvent.click(screen.getByRole("button", { name: "Oui, terminer" }));
+    expect(await screen.findByText("Mistral est injoignable")).toBeInTheDocument();
+    expect(screen.getByLabelText("Ton message")).toBeDisabled();
+    await userEvent.click(screen.getByRole("button", { name: "Obtenir la correction détaillée" }));
+    expect(await screen.findByRole("region", { name: "Correction" })).toBeInTheDocument();
+    expect(api.requestCorrection).toHaveBeenCalledTimes(2);
+  });
+
+  it("rouvre une session terminée avec sa correction déjà générée, sans appel IA", async () => {
+    vi.mocked(api.getSdSession).mockResolvedValue(FINISHED_SD);
+    vi.mocked(api.getCorrection).mockResolvedValue(BUNDLE);
+    renderPage();
+    expect(await screen.findByRole("region", { name: "Correction" })).toBeInTheDocument();
+    expect(api.requestCorrection).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: "Obtenir la correction détaillée" })).not.toBeInTheDocument();
+  });
+
+  it("une session terminée sans correction propose de la générer, uniquement sur clic", async () => {
+    vi.mocked(api.getSdSession).mockResolvedValue(FINISHED_SD);
+    vi.mocked(api.requestCorrection).mockResolvedValue(BUNDLE);
+    renderPage();
+    const button = await screen.findByRole("button", { name: "Obtenir la correction détaillée" });
+    expect(api.requestCorrection).not.toHaveBeenCalled();
+    await userEvent.click(button);
+    expect(await screen.findByRole("region", { name: "Correction" })).toBeInTheDocument();
+    expect(api.requestCorrection).toHaveBeenCalledWith(5);
+  });
+
+  it("ne cherche pas de correction tant que la session est ouverte", async () => {
+    renderPage();
+    await screen.findByLabelText("Ton message");
+    expect(api.getCorrection).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: "Obtenir la correction détaillée" })).not.toBeInTheDocument();
   });
 
   it("peut annuler la fin de session", async () => {
@@ -145,7 +202,7 @@ describe("SystemDesignSession", () => {
     vi.mocked(api.getSdSession).mockResolvedValue(FINISHED_SD);
     vi.mocked(api.getScene).mockResolvedValue(STORED_SCENE);
     renderPage();
-    expect(await screen.findByText(/La correction détaillée arrivera/)).toBeInTheDocument();
+    expect(await screen.findByText(/Ton schéma et ta discussion sont conservés/)).toBeInTheDocument();
     expect(screen.getByTestId("canvas")).toHaveTextContent("lecture seule");
   });
 

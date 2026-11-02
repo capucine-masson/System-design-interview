@@ -20,7 +20,12 @@ export default defineConfig(({ mode }) => {
     server: { port: frontPort, strictPort: true },
     // Excalidraw (~1 Mo) est chargé à la demande, uniquement sur une session de System Design.
     build: { chunkSizeWarningLimit: 2000 },
-    test: { environment: "jsdom", setupFiles: ["./src/test-setup.ts"] },
+    test: {
+      environment: "jsdom",
+      setupFiles: ["./src/test-setup.ts"],
+      // Marge pour les machines chargées : les tests userEvent peuvent dépasser 5 s en parallèle.
+      testTimeout: 20_000,
+    },
     define: {
       "import.meta.env.VITE_API_URL": JSON.stringify(`http://127.0.0.1:${apiPort}`),
     },

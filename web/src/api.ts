@@ -1,6 +1,7 @@
 import type {
   Card,
   CaseType,
+  CorrectionBundle,
   Categorie,
   Difficulte,
   Question,
@@ -187,3 +188,17 @@ export const listSceneVersions = (id: number): Promise<SceneVersion[]> =>
 
 export const getSceneVersion = (id: number, version: number): Promise<StoredScene> =>
   request<StoredScene>(sd(`/sessions/${id}/scenes/${version}`));
+
+/** Correction déjà générée, ou null (session non terminée ou correction pas encore demandée). */
+export async function getCorrection(id: number): Promise<CorrectionBundle | null> {
+  try {
+    return await request<CorrectionBundle>(sd(`/sessions/${id}/correction`));
+  } catch (err) {
+    if (err instanceof ApiError && err.status === HTTP_NOT_FOUND) return null;
+    throw err;
+  }
+}
+
+/** Génère la correction et la solution de référence (appel IA explicite, mis en cache). */
+export const requestCorrection = (id: number): Promise<CorrectionBundle> =>
+  post<CorrectionBundle>(sd(`/sessions/${id}/correction`));

@@ -2,18 +2,21 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   finishSdSession,
+  getCorrection,
   getScene,
   getSdSession,
   postSdMessage,
   putElapsed,
+  requestCorrection,
   requestSdReply,
 } from "../api";
 import SdCanvas, { type SdCanvasHandle } from "../components/SdCanvas";
 import SdChat from "../components/SdChat";
+import SdCorrectionView from "../components/SdCorrectionView";
 import SdFinish from "../components/SdFinish";
 import SdTimer from "../components/SdTimer";
 import { useElapsed } from "../hooks/useElapsed";
-import type { SdSession, StoredScene } from "../types";
+import type { CorrectionBundle, SdSession, StoredScene } from "../types";
 
 const ELAPSED_SYNC_MS = 30_000;
 
@@ -49,7 +52,8 @@ export default function SystemDesignSession() {
 
 function Workspace({ initial, sessionId }: { initial: Loaded; sessionId: number }) {
   const [session, setSession] = useState(initial.session);
-  const [busy, setBusy] = useState<"message" | "reply" | "finish" | null>(null);
+  const [busy, setBusy] = useState<"message" | "reply" | "finish" | "correction" | null>(null);
+  const [bundle, setBundle] = useState<CorrectionBundle | null>(null);
   const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<SdCanvasHandle>(null);
   const finished = session.statut === "terminee";
@@ -68,6 +72,25 @@ function Workspace({ initial, sessionId }: { initial: Loaded; sessionId: number 
       sync();
     };
   }, [sessionId, finished, getElapsed]);
+
+  useEffect(() => {
+    if (!finished) return;
+    getCorrection(sessionId)
+      .then((found) => found && setBundle(found))
+      .catch((err: unknown) => setError(errorMessage(err)));
+  }, [finished, sessionId]);
+
+  const askCorrection = useCallback(async (): Promise<void> => {
+    setBusy("correction");
+    setError(null);
+    try {
+      setBundle(await requestCorrection(sessionId));
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(null);
+    }
+  }, [sessionId]);
 
   const askReply = useCallback(async (): Promise<void> => {
     setBusy("reply");
@@ -104,9 +127,10 @@ function Workspace({ initial, sessionId }: { initial: Loaded; sessionId: number 
       setSession(await finishSdSession(sessionId));
     } catch (err) {
       setError(errorMessage(err));
-    } finally {
       setBusy(null);
+      return;
     }
+    await askCorrection();
   };
 
   return (
@@ -125,7 +149,7 @@ function Workspace({ initial, sessionId }: { initial: Loaded; sessionId: number 
         <SdChat
           session={session}
           busy={busy === "message" || busy === "reply"}
-          error={error}
+          error={finished ? null : error}
           onSend={send}
           onRetryReply={() => void askReply()}
         />
@@ -137,6 +161,21 @@ function Workspace({ initial, sessionId }: { initial: Loaded; sessionId: number 
           getElapsed={getElapsed}
         />
       </div>
+      {busy === "correction" && (
+        <p className="muted" role="status">
+          Le manager prépare la correction… (jusqu&apos;à une minute la première fois)
+        </p>
+      )}
+      {finished && !bundle && busy !== "correction" && (
+        <div className="card">
+          <p>La correction détaillée et la solution de référence sont prêtes à être générées.</p>
+          {error && <div className="notice notice-error">{error}</div>}
+          <button type="button" className="btn btn-primary" onClick={() => void askCorrection()}>
+            Obtenir la correction détaillée
+          </button>
+        </div>
+      )}
+      {bundle && <SdCorrectionView bundle={bundle} />}
     </section>
   );
 }

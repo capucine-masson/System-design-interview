@@ -12,8 +12,7 @@ export default function SdFinish({ finished, busy, onFinish }: SdFinishProps) {
   if (finished) {
     return (
       <p className="notice" role="status">
-        Session terminée. La correction détaillée arrivera à l&apos;étape suivante ; ton schéma et ta
-        discussion sont conservés.
+        Session terminée. Ton schéma et ta discussion sont conservés.
       </p>
     );
   }

@@ -4,11 +4,12 @@ import sqlite3
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from api import sd, sd_db
+from api import sd, sd_correction, sd_db
 from api.config import Settings
 from api.deps import get_conn, get_llm_client, get_settings
 from api.llm import LLMClient
 from api.sd_catalog import CASE_TYPES
+from api.sd_correction_models import CorrectionBundle
 from api.sd_models import (
     CaseOut,
     CaseTypeOut,
@@ -29,7 +30,10 @@ router = APIRouter(prefix="/api/sd")
 @router.get("/case-types")
 def case_types() -> list[CaseTypeOut]:
     """Types de cas disponibles (catalogue côté serveur)."""
-    return [CaseTypeOut(slug=t.slug, titre=t.titre, description=t.description) for t in CASE_TYPES]
+    return [
+        CaseTypeOut(slug=t.slug, famille=t.famille, titre=t.titre, description=t.description)
+        for t in CASE_TYPES
+    ]
 
 
 @router.post("/cases/generate")
@@ -141,6 +145,23 @@ def elapsed(session_id: int, body: ElapsedIn, conn: sqlite3.Connection = Depends
     """Enregistre le temps passé sur la session."""
     sd.require_session(conn, session_id)
     sd_db.set_elapsed(conn, session_id, body.elapsed_s)
+
+
+@router.get("/sessions/{session_id}/correction")
+def correction(session_id: int, conn: sqlite3.Connection = Depends(get_conn)) -> CorrectionBundle:
+    """Correction déjà générée d'une session terminée (aucun appel IA)."""
+    return sd_correction.get_correction(conn, session_id)
+
+
+@router.post("/sessions/{session_id}/correction")
+def request_correction(
+    session_id: int,
+    conn: sqlite3.Connection = Depends(get_conn),
+    settings: Settings = Depends(get_settings),
+    client: LLMClient = Depends(get_llm_client),
+) -> CorrectionBundle:
+    """Génère la correction et la solution de référence (appel IA explicite, mis en cache)."""
+    return sd_correction.request_correction(conn, settings, client, session_id)
 
 
 @router.post("/sessions/{session_id}/finish")

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -52,7 +52,25 @@ describe("SystemDesign (choix du cas)", () => {
     renderPage();
     await screen.findByLabelText(/Au hasard/);
     await userEvent.click(screen.getByRole("button", { name: "Générer un brief" }));
-    expect(api.generateCase).toHaveBeenCalledWith("agent");
+    expect(api.generateCase).toHaveBeenCalledWith("google-docs");
+  });
+
+  it("range les cas par famille : ML / LLM puis cas classiques", async () => {
+    renderPage();
+    await screen.findByLabelText(/Au hasard/);
+    const ml = screen.getByRole("group", { name: "Systèmes ML / LLM" });
+    const classic = screen.getByRole("group", { name: "Cas classiques d'entretien" });
+    expect(within(ml).getByLabelText(/RAG sur une grande base/)).toBeInTheDocument();
+    expect(within(ml).queryByLabelText(/Google Docs/)).not.toBeInTheDocument();
+    expect(within(classic).getByLabelText(/Google Docs/)).toBeInTheDocument();
+  });
+
+  it("génère un brief pour un cas classique choisi", async () => {
+    vi.mocked(api.generateCase).mockResolvedValue(SD_SESSION.case);
+    renderPage();
+    await userEvent.click(await screen.findByLabelText(/Google Docs/));
+    await userEvent.click(screen.getByRole("button", { name: "Générer un brief" }));
+    expect(api.generateCase).toHaveBeenCalledWith("google-docs");
   });
 
   it("tire de la banque sans appeler la génération", async () => {

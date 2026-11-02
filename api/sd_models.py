@@ -80,6 +80,7 @@ class CaseTypeOut(BaseModel):
     """Type de cas affiché dans l'interface."""
 
     slug: str
+    famille: Literal["ml", "classique"]
     titre: str
     description: str
 

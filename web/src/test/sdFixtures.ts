@@ -1,8 +1,14 @@
-import type { CaseType, SdSession, SdSessionSummary, StoredScene } from "../types";
+import type { CaseType, CorrectionBundle, SdSession, SdSessionSummary, StoredScene } from "../types";
 
 export const CASE_TYPES: CaseType[] = [
-  { slug: "rag", titre: "RAG sur une grande base documentaire", description: "Questions sur un corpus." },
-  { slug: "agent", titre: "Agent ou assistant avec outils", description: "Un assistant qui agit." },
+  { slug: "rag", famille: "ml", titre: "RAG sur une grande base documentaire", description: "Questions sur un corpus." },
+  { slug: "agent", famille: "ml", titre: "Agent ou assistant avec outils", description: "Un assistant qui agit." },
+  {
+    slug: "google-docs",
+    famille: "classique",
+    titre: "Éditeur de documents collaboratif (type Google Docs)",
+    description: "Édition à plusieurs en temps réel.",
+  },
 ];
 
 export const SD_SESSION: SdSession = {
@@ -69,4 +75,48 @@ export const SD_SUMMARY: SdSessionSummary = {
   titre: "Assistant documentaire interne",
   nb_messages: 3,
   elapsed_s: 600,
+};
+
+export const BUNDLE: CorrectionBundle = {
+  correction: {
+    resume: "Bonne structure mais peu de chiffres.",
+    notes: {
+      clarification: 4,
+      hypotheses: 3,
+      architecture: 3,
+      approfondissement: 2,
+      compromis: 3,
+      evaluation_monitoring: 1,
+    },
+    details_decouverts: ["Volumétrie"],
+    points_forts: ["Bonnes questions de départ"],
+    points_faibles: ["Évaluation oubliée"],
+    composants_manquants: ["Reranker"],
+    conseils: ["Chiffre le dimensionnement", "Parle d'évaluation"],
+  },
+  moyenne: 2.67,
+  details: [
+    { sujet: "Volumétrie", valeur: "12 millions de pages", decouvert: true },
+    { sujet: "Budget", valeur: "30 000 euros par mois", decouvert: false },
+    { sujet: "Latence cible", valeur: "2 secondes au p95", decouvert: false },
+  ],
+  reference: {
+    hypotheses: ["Trafic réparti sur la journée"],
+    dimensionnement: ["Environ 1 To d'index"],
+    composants: [
+      { nom: "API", role: "Point d'entrée" },
+      { nom: "Index vectoriel", role: "Recherche des passages" },
+    ],
+    flux: ["La requête arrive à l'API", "Recherche vectorielle", "Génération"],
+    compromis: [{ choix: "Index HNSW", alternative: "Recherche exacte", raison: "Latence" }],
+    evaluation_monitoring: ["Recall@k"],
+    pieges: ["Ignorer les droits d'accès"],
+    diagramme: {
+      nodes: [
+        { id: "api", label: "API", col: 0, row: 0 },
+        { id: "idx", label: "Index vectoriel", col: 1, row: 0 },
+      ],
+      edges: [{ source: "api", target: "idx", label: "kNN" }],
+    },
+  },
 };

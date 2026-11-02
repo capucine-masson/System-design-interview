@@ -2,10 +2,40 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createSdSession, drawCase, generateCase, listCaseTypes } from "../api";
 import SdSessionList from "../components/SdSessionList";
-import type { CaseType, SdCase } from "../types";
+import type { CaseFamily, CaseType, SdCase } from "../types";
 
 type Action = "generate" | "draw";
 const RANDOM = "random";
+
+const FAMILIES: { value: CaseFamily; label: string }[] = [
+  { value: "ml", label: "Systèmes ML / LLM" },
+  { value: "classique", label: "Cas classiques d'entretien" },
+];
+
+interface CaseOptionProps {
+  value: string;
+  title: string;
+  description: string;
+  selected: string;
+  disabled: boolean;
+  onSelect: (value: string) => void;
+}
+
+function CaseOption({ value, title, description, selected, disabled, onSelect }: CaseOptionProps) {
+  return (
+    <label className={`case-type${selected === value ? " is-selected" : ""}`}>
+      <input
+        type="radio"
+        name="case-type"
+        checked={selected === value}
+        disabled={disabled}
+        onChange={() => onSelect(value)}
+      />
+      <strong>{title}</strong>
+      <span className="muted">{description}</span>
+    </label>
+  );
+}
 
 export default function SystemDesign() {
   const navigate = useNavigate();
@@ -51,36 +81,37 @@ export default function SystemDesign() {
         </p>
         {!types && !error && <p className="muted">Chargement des cas…</p>}
         {types && (
-          <fieldset className="case-types">
-            <legend>Cas</legend>
-            <label className={`case-type${selected === RANDOM ? " is-selected" : ""}`}>
-              <input
-                type="radio"
-                name="case-type"
-                checked={selected === RANDOM}
+          <div className="case-groups">
+            <fieldset className="case-types">
+              <legend>Hasard</legend>
+              <CaseOption
+                value={RANDOM}
+                title="Au hasard"
+                description="Un cas tiré parmi tous les types."
+                selected={selected}
                 disabled={disabled}
-                onChange={() => setSelected(RANDOM)}
+                onSelect={setSelected}
               />
-              <strong>Au hasard</strong>
-              <span className="muted">Un cas tiré parmi tous les types.</span>
-            </label>
-            {types.map((type) => (
-              <label
-                key={type.slug}
-                className={`case-type${selected === type.slug ? " is-selected" : ""}`}
-              >
-                <input
-                  type="radio"
-                  name="case-type"
-                  checked={selected === type.slug}
-                  disabled={disabled}
-                  onChange={() => setSelected(type.slug)}
-                />
-                <strong>{type.titre}</strong>
-                <span className="muted">{type.description}</span>
-              </label>
+            </fieldset>
+            {FAMILIES.map((family) => (
+              <fieldset key={family.value} className="case-types">
+                <legend>{family.label}</legend>
+                {types
+                  .filter((type) => type.famille === family.value)
+                  .map((type) => (
+                    <CaseOption
+                      key={type.slug}
+                      value={type.slug}
+                      title={type.titre}
+                      description={type.description}
+                      selected={selected}
+                      disabled={disabled}
+                      onSelect={setSelected}
+                    />
+                  ))}
+              </fieldset>
             ))}
-          </fieldset>
+          </div>
         )}
         <div className="setup-actions">
           <button

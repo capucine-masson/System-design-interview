@@ -3,7 +3,7 @@
 Application web locale (un seul utilisateur) pour s'entraîner aux entretiens de system design :
 cours en cartes, entretien manager à l'oral, System Design avec Excalidraw. Tout est sauvegardé en SQLite.
 
-> État : étape 4. Cours (9 thèmes, sans IA), Entretien manager et System Design (brief, interviewer, Excalidraw) fonctionnent ; IA sur clic uniquement. La correction finale du System Design arrive à l'étape 5.
+> État : étape 4. Cours (9 thèmes, sans IA), Entretien manager et System Design (brief, interviewer, Excalidraw) fonctionnent ; IA sur clic uniquement. La correction du System Design est incluse.
 
 ## Installation
 
@@ -62,18 +62,22 @@ Le retour structuré est long : garde `LLM_MAX_TOKENS` à 1500 ou plus.
 2. Le brief est volontairement flou : les chiffres (volumétrie, latence, budget...) sont cachés côté serveur et ne sont révélés que si tu poses la bonne question à l'interviewer.
 3. Discuter par écrit ou à l'oral (**Dicter**, Chrome ou Edge) ; chaque message envoyé = 1 appel IA. Le contexte envoyé reste court (derniers messages + résumé glissant). 40 messages maximum par session.
 4. Dessiner dans Excalidraw (raccourcis R, A, T, D, Ctrl+D... actifs quand le canvas a le focus). Le panneau **Bibliothèque** contient un cylindre « base de données », une file, un service externe et un utilisateur. Le schéma est sauvegardé automatiquement (versions horodatées, bouton **Versions** pour revenir en arrière).
-5. Minuteur de 45 minutes avec les étapes conseillées (indicatif, il ne bloque rien). **Terminer et obtenir la correction** clôt la session ; la correction elle-même viendra à l'étape suivante.
+5. Minuteur de 45 minutes avec les étapes conseillées (indicatif, il ne bloque rien). **Terminer et obtenir la correction** clôt la session puis génère la correction (jusqu'à 2 appels IA : la solution de référence du cas, générée une seule fois et réutilisée, puis ta correction). Tu y vois tes notes par étape, les détails que l'interviewer te cachait (obtenus ou non), les composants manquants, et la solution de référence avec son schéma. Une session déjà terminée propose le bouton **Obtenir la correction détaillée**.
 6. Rouvre une session depuis **System Design** ou **Historique** : brief, chat, schéma et temps sont restaurés.
 
-Ajouter un type de cas : ajouter une entrée dans `api/sd_catalog.py` (rien d'autre à modifier).
+Cas disponibles : 6 systèmes ML/LLM (RAG, inférence, entraînement, évaluation, agent, recommandation) et 14 cas classiques (Google Docs, streaming vidéo, raccourcisseur d'URL, messagerie, fil d'actualité, VTC, stockage de fichiers, limiteur de débit, notifications, autocomplétion, crawler, paiement, billetterie, base clé-valeur).
 
-`api/scene_text.py` transforme un schéma Excalidraw en description texte (composants, étiquettes, flèches) pour l'envoyer au modèle sans image à l'étape 5.
+Ajouter un type de cas : ajouter une entrée dans `api/sd_catalog.py` avec sa `famille` (`ml` ou `classique`) ; rien d'autre à modifier.
+
+`api/scene_text.py` transforme ton schéma Excalidraw en description texte (composants, étiquettes, flèches) envoyée au modèle pour la correction, sans image.
 
 Les polices d'Excalidraw sont chargées depuis un CDN : internet est requis (comme pour Mistral et la dictée).
 
 ## Variables `.env`
 
 Toutes sont requises : le backend refuse de démarrer si l'une est vide.
+
+> Après avoir modifié `.env`, recharge-le dans le shell (la commande de la section Lancement) puis **redémarre le backend** : les variables déjà définies dans le shell ne sont pas écrasées, donc l'ancienne valeur reste active sinon.
 
 | Variable | Rôle |
 | --- | --- |
@@ -82,8 +86,8 @@ Toutes sont requises : le backend refuse de démarrer si l'une est vide.
 | `MISTRAL_API_KEY` | Clé API du fournisseur IA (reste côté serveur) |
 | `MISTRAL_MODEL` | ID exact du modèle |
 | `MISTRAL_PRICE_INPUT_PER_M` / `MISTRAL_PRICE_OUTPUT_PER_M` | Prix par million de tokens (entrée / sortie), pour le coût estimé |
-| `LLM_MAX_TOKENS` | Plafond de tokens générés par appel (1500 conseillé) |
-| `LLM_TIMEOUT_S` | Délai maximum d'un appel IA, en secondes |
+| `LLM_MAX_TOKENS` | Plafond de tokens générés par appel (2500 conseillé : la solution de référence est longue) |
+| `LLM_TIMEOUT_S` | Délai maximum d'un appel IA, en secondes (90 conseillé) |
 
 ## Vérifications
 

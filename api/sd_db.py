@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 
 from pydantic import JsonValue
 
+from api.sd_correction_models import ReferenceSolution, SdCorrection
 from api.sd_models import (
     CaseOut,
     GeneratedCase,
@@ -257,3 +258,42 @@ def list_scene_versions(conn: sqlite3.Connection, session_id: int) -> list[Scene
         (session_id,),
     ).fetchall()
     return [SceneVersion(**dict(row)) for row in rows]
+
+
+# --- Solution de référence (par cas) et correction (par session) ---
+
+
+def get_reference(conn: sqlite3.Connection, case_id: int) -> ReferenceSolution | None:
+    """Solution de référence déjà générée pour ce cas, s'il y en a une."""
+    row = conn.execute("SELECT contenu FROM sd_references WHERE case_id = ?", (case_id,)).fetchone()
+    return ReferenceSolution.model_validate_json(row["contenu"]) if row else None
+
+
+def save_reference(conn: sqlite3.Connection, case_id: int, reference: ReferenceSolution) -> None:
+    """Met la solution de référence en cache pour ce cas."""
+    conn.execute(
+        "INSERT INTO sd_references (case_id, contenu, created_at) VALUES (?, ?, ?) "
+        "ON CONFLICT(case_id) DO UPDATE SET contenu = excluded.contenu, "
+        "created_at = excluded.created_at",
+        (case_id, reference.model_dump_json(), _now()),
+    )
+    conn.commit()
+
+
+def get_correction(conn: sqlite3.Connection, session_id: int) -> SdCorrection | None:
+    """Correction déjà générée pour cette session, s'il y en a une."""
+    row = conn.execute(
+        "SELECT correction_json FROM sd_corrections WHERE session_id = ?", (session_id,)
+    ).fetchone()
+    return SdCorrection.model_validate_json(row["correction_json"]) if row else None
+
+
+def save_correction(conn: sqlite3.Connection, session_id: int, correction: SdCorrection) -> None:
+    """Enregistre la correction de la session."""
+    conn.execute(
+        "INSERT INTO sd_corrections (session_id, correction_json, created_at) VALUES (?, ?, ?) "
+        "ON CONFLICT(session_id) DO UPDATE SET correction_json = excluded.correction_json, "
+        "created_at = excluded.created_at",
+        (session_id, correction.model_dump_json(), _now()),
+    )
+    conn.commit()

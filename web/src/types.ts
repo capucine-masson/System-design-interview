@@ -127,8 +127,11 @@ export interface SessionSummary {
   moyenne: number | null;
 }
 
+export type CaseFamily = "ml" | "classique";
+
 export interface CaseType {
   slug: string;
+  famille: CaseFamily;
   titre: string;
   description: string;
 }
@@ -181,4 +184,58 @@ export type SceneElement = Record<string, unknown>;
 export interface StoredScene extends SceneVersion {
   elements: SceneElement[];
   app_state: Record<string, unknown>;
+}
+
+export interface SdNotes {
+  clarification: number;
+  hypotheses: number;
+  architecture: number;
+  approfondissement: number;
+  compromis: number;
+  evaluation_monitoring: number;
+}
+
+export interface SdCorrection {
+  resume: string;
+  notes: SdNotes;
+  details_decouverts: string[];
+  points_forts: string[];
+  points_faibles: string[];
+  composants_manquants: string[];
+  conseils: string[];
+}
+
+export interface RefComponent {
+  nom: string;
+  role: string;
+}
+
+export interface RefTradeoff {
+  choix: string;
+  alternative: string;
+  raison: string;
+}
+
+export interface SdReference {
+  hypotheses: string[];
+  dimensionnement: string[];
+  composants: RefComponent[];
+  flux: string[];
+  compromis: RefTradeoff[];
+  evaluation_monitoring: string[];
+  pieges: string[];
+  diagramme: Diagram | null;
+}
+
+export interface HiddenDetailStatus {
+  sujet: string;
+  valeur: string;
+  decouvert: boolean;
+}
+
+export interface CorrectionBundle {
+  correction: SdCorrection;
+  moyenne: number;
+  details: HiddenDetailStatus[];
+  reference: SdReference;
 }

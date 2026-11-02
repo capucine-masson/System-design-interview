@@ -62,10 +62,45 @@ def chat(
 # --- Catalogue ---
 
 
-def test_catalog_has_the_six_required_cases(client: TestClient) -> None:
-    """Les six cas demandés sont exposés par l'API."""
-    slugs = {t["slug"] for t in client.get("/api/sd/case-types").json()}
-    assert slugs == {"rag", "inference", "entrainement", "evaluation", "agent", "recommandation"}
+ML_SLUGS = {"rag", "inference", "entrainement", "evaluation", "agent", "recommandation"}
+CLASSIC_SLUGS = {
+    "google-docs", "streaming-video", "url-shortener", "messagerie", "fil-actualite", "vtc",
+    "stockage-fichiers", "rate-limiter", "notifications", "autocompletion", "crawler",
+    "paiement", "billetterie", "kv-store",
+}  # fmt: skip
+
+
+def test_catalog_has_the_ml_cases_and_the_classic_ones(client: TestClient) -> None:
+    """Les six cas ML/LLM et les cas classiques sont exposés, rangés par famille."""
+    types = client.get("/api/sd/case-types").json()
+    by_family = {
+        family: {t["slug"] for t in types if t["famille"] == family}
+        for family in ("ml", "classique")
+    }
+    assert by_family["ml"] == ML_SLUGS
+    assert by_family["classique"] == CLASSIC_SLUGS
+
+
+def test_catalog_entries_are_complete_and_unique() -> None:
+    """Chaque entrée a un slug unique, un titre, une description et au moins 4 axes."""
+    slugs = [t.slug for t in sd_catalog.CASE_TYPES]
+    assert len(slugs) == len(set(slugs))
+    for case_type in sd_catalog.CASE_TYPES:
+        assert case_type.titre and case_type.description
+        assert len(case_type.axes) >= 4, case_type.slug
+
+
+def test_classic_case_prompt_asks_for_a_non_ml_system(
+    client: TestClient, fake_llm: FakeClient
+) -> None:
+    """La famille est transmise au modèle : un cas classique ne doit pas devenir un cas ML."""
+    new_case(client, fake_llm, "google-docs")
+    new_case(client, fake_llm, "rag")
+    classic, ml = (fake_llm.calls[0][1], fake_llm.calls[1][1])
+    assert "système classique" in classic[1].content
+    assert "Google Docs" in classic[1].content
+    assert "système ML/LLM" in ml[1].content
+    assert "sans ML" in classic[0].content
 
 
 def test_adding_a_case_type_is_a_one_entry_change(
