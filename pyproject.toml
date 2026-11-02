@@ -1,0 +1,36 @@
+[project]
+name = "systemdesign"
+version = "0.1.0"
+description = "Application locale d'entraînement aux entretiens Mistral AI"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pydantic",
+    "mistralai",
+    "python-dotenv",
+    "httpx",
+]
+
+[dependency-groups]
+dev = ["ruff", "mypy", "pytest"]
+
+[tool.mypy]
+strict = true
+files = ["api", "tests"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.setuptools]
+packages = ["api"]
