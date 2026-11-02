@@ -3,7 +3,7 @@
 Application web locale (un seul utilisateur) pour préparer un entretien MLE / LLM chez Mistral AI :
 cours en cartes, entretien manager à l'oral, System Design avec Excalidraw. Tout est sauvegardé en SQLite.
 
-> État : étape 2. Section Cours (cartes, progression, révision aléatoire) fonctionnelle, sans IA. Seul le thème Transformers est rédigé pour l'instant. Aucune génération IA n'est encore branchée.
+> État : étape 3. Cours (9 thèmes, sans IA) et Entretien manager (IA Mistral, sur clic uniquement) fonctionnent. System Design : à venir.
 
 ## Installation
 
@@ -42,6 +42,20 @@ Relançable sans risque : la progression (maîtrisée / à revoir) est conservé
 uv run python -m api.seed
 ```
 
+## Entretien manager
+
+1. Choisir une catégorie et une difficulté, puis **Générer une question** (1 appel IA, rangée dans la banque) ou **Tirer de la banque** (gratuit).
+2. Répondre à l'oral (**Dicter ma réponse**) ou au clavier ; le texte reste modifiable. Chrono avec objectif de 2 à 3 minutes.
+3. Le manager pose une relance (1 appel IA) ; au plus 3 réponses par question.
+4. **Terminer et obtenir le retour** (1 appel IA) : notes, points forts et faibles, oublis, réponse améliorée, 2 conseils.
+5. Les sessions et l'évolution des notes sont dans **Historique**.
+
+Un cycle complet coûte 3 à 5 appels IA, tous visibles dans **Consommation**.
+
+La dictée vocale utilise le navigateur (gratuit, français, internet requis). Utilise **Chrome** ou **Edge** sur ordinateur ; Firefox ne la propose pas. Sinon, tape ta réponse.
+
+Le retour structuré est long : garde `LLM_MAX_TOKENS` à 1500 ou plus.
+
 ## Variables `.env`
 
 Toutes sont requises : le backend refuse de démarrer si l'une est vide.
@@ -53,7 +67,7 @@ Toutes sont requises : le backend refuse de démarrer si l'une est vide.
 | `MISTRAL_API_KEY` | Clé API Mistral (reste côté serveur) |
 | `MISTRAL_MODEL` | ID exact du modèle, ex. `mistral-small-2603` |
 | `MISTRAL_PRICE_INPUT_PER_M` / `MISTRAL_PRICE_OUTPUT_PER_M` | Prix par million de tokens (entrée / sortie), pour le coût estimé |
-| `LLM_MAX_TOKENS` | Plafond de tokens générés par appel |
+| `LLM_MAX_TOKENS` | Plafond de tokens générés par appel (1500 conseillé) |
 | `LLM_TIMEOUT_S` | Délai maximum d'un appel IA, en secondes |
 
 ## Vérifications

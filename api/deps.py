@@ -2,11 +2,13 @@
 
 import sqlite3
 from collections.abc import Iterator
+from functools import lru_cache
 
 from fastapi import Depends
 
 from api.config import Settings, load_settings
 from api.db import connect
+from api.llm import LLMClient, MistralClient
 
 settings = load_settings()
 
@@ -23,3 +25,14 @@ def get_conn(cfg: Settings = Depends(get_settings)) -> Iterator[sqlite3.Connecti
         yield conn
     finally:
         conn.close()
+
+
+@lru_cache
+def _mistral_client() -> MistralClient:
+    """Client Mistral créé à la première utilisation (jamais au démarrage)."""
+    return MistralClient(settings.mistral_api_key, settings.llm_timeout_s)
+
+
+def get_llm_client() -> LLMClient:
+    """Dépendance : client du modèle (remplaçable par un faux dans les tests)."""
+    return _mistral_client()

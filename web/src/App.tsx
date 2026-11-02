@@ -5,6 +5,7 @@ import Cours from "./pages/Cours";
 import CoursTheme from "./pages/CoursTheme";
 import EntretienManager from "./pages/EntretienManager";
 import Historique from "./pages/Historique";
+import ManagerSession from "./pages/ManagerSession";
 import Revision from "./pages/Revision";
 import SystemDesign from "./pages/SystemDesign";
 
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="/cours/revision" element={<Revision />} />
           <Route path="/cours/:slug" element={<CoursTheme />} />
           <Route path="/entretien-manager" element={<EntretienManager />} />
+          <Route path="/entretien-manager/sessions/:id" element={<ManagerSession />} />
           <Route path="/system-design" element={<SystemDesign />} />
           <Route path="/historique" element={<Historique />} />
           <Route path="/consommation" element={<Consommation />} />

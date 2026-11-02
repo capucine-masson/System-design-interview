@@ -1,13 +1,11 @@
-import EmptyState from "../components/EmptyState";
+import ManagerHistory from "../components/ManagerHistory";
 
 export default function Historique() {
   return (
     <section>
       <h1>Historique</h1>
-      <EmptyState
-        title="Rien à revoir pour l'instant"
-        hint="Tes réponses et sessions passées apparaîtront ici."
-      />
+      <ManagerHistory />
+      <p className="muted">Les sessions de System Design apparaîtront ici à une prochaine étape.</p>
     </section>
   );
 }
