@@ -126,3 +126,59 @@ export interface SessionSummary {
   notes: Notes | null;
   moyenne: number | null;
 }
+
+export interface CaseType {
+  slug: string;
+  titre: string;
+  description: string;
+}
+
+export interface SdCase {
+  id: number;
+  type: string;
+  titre: string;
+  brief: string;
+  nb_sessions: number;
+}
+
+export interface SdMessage {
+  id: number;
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+}
+
+export interface SdSession {
+  id: number;
+  created_at: string;
+  statut: "en_cours" | "terminee";
+  elapsed_s: number;
+  case: SdCase;
+  messages: SdMessage[];
+  user_messages: number;
+  max_user_messages: number;
+  awaiting_reply: boolean;
+}
+
+export interface SdSessionSummary {
+  id: number;
+  created_at: string;
+  statut: "en_cours" | "terminee";
+  type: string;
+  titre: string;
+  nb_messages: number;
+  elapsed_s: number;
+}
+
+export interface SceneVersion {
+  version: number;
+  created_at: string;
+}
+
+/** Éléments Excalidraw sérialisés (JSON), tels que stockés par le serveur. */
+export type SceneElement = Record<string, unknown>;
+
+export interface StoredScene extends SceneVersion {
+  elements: SceneElement[];
+  app_state: Record<string, unknown>;
+}

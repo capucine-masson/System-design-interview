@@ -12,6 +12,7 @@ from api.db import connect, migrate
 from api.deps import get_conn, settings
 from api.routes_courses import router as courses_router
 from api.routes_manager import router as manager_router
+from api.routes_sd import router as sd_router
 from api.usage import UsageSummary, summarize_usage
 
 logging.basicConfig(level=logging.INFO)
@@ -35,6 +36,7 @@ app.add_middleware(
 )
 app.include_router(courses_router)
 app.include_router(manager_router)
+app.include_router(sd_router)
 
 
 @app.get("/health")

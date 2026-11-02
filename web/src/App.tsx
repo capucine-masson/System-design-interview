@@ -1,4 +1,5 @@
-import { Navigate, NavLink, Route, Routes } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { Navigate, NavLink, Route, Routes, useMatch } from "react-router-dom";
 import ThemeToggle from "./components/ThemeToggle";
 import Consommation from "./pages/Consommation";
 import Cours from "./pages/Cours";
@@ -9,6 +10,9 @@ import ManagerSession from "./pages/ManagerSession";
 import Revision from "./pages/Revision";
 import SystemDesign from "./pages/SystemDesign";
 
+// Excalidraw est lourd : chargé uniquement quand on ouvre une session de System Design.
+const SystemDesignSession = lazy(() => import("./pages/SystemDesignSession"));
+
 const NAV_ITEMS = [
   { to: "/cours", label: "Cours" },
   { to: "/entretien-manager", label: "Entretien manager" },
@@ -18,6 +22,7 @@ const NAV_ITEMS = [
 ];
 
 export default function App() {
+  const wide = useMatch("/system-design/sessions/:id") !== null;
   return (
     <div className="layout">
       <header className="topbar">
@@ -31,7 +36,7 @@ export default function App() {
         </nav>
         <ThemeToggle />
       </header>
-      <main className="content">
+      <main className={wide ? "content content-wide" : "content"}>
         <Routes>
           <Route path="/" element={<Navigate to="/cours" replace />} />
           <Route path="/cours" element={<Cours />} />
@@ -40,6 +45,14 @@ export default function App() {
           <Route path="/entretien-manager" element={<EntretienManager />} />
           <Route path="/entretien-manager/sessions/:id" element={<ManagerSession />} />
           <Route path="/system-design" element={<SystemDesign />} />
+          <Route
+            path="/system-design/sessions/:id"
+            element={
+              <Suspense fallback={<p className="muted">Chargement de l&apos;éditeur…</p>}>
+                <SystemDesignSession />
+              </Suspense>
+            }
+          />
           <Route path="/historique" element={<Historique />} />
           <Route path="/consommation" element={<Consommation />} />
         </Routes>

@@ -1,16 +1,13 @@
 """Tests de l'entretien manager : uniquement avec le faux client, jamais le vrai modèle."""
 
-import json
 import sqlite3
-from collections.abc import Iterator, Mapping
 
 import pytest
 from fastapi.testclient import TestClient
 
-from api.deps import get_llm_client
 from api.llm import FakeClient
-from api.main import app
 from api.manager_models import Feedback, GeneratedQuestion, Notes, Relance
+from tests.helpers import llm_calls, use_replies
 
 QUESTION = {
     "contexte": "Ton équipe doit lancer un assistant interne basé sur un LLM.",
@@ -39,29 +36,6 @@ FEEDBACK = {
     "conseils": ["Chiffre le risque", "Annonce ta décision en premier", "Conseil en trop"],
 }
 ANSWER = {"transcription": "Je lance avec un périmètre réduit.", "duree_s": 130}
-
-
-def as_json(payload: Mapping[str, object]) -> str:
-    """Sérialise une réponse simulée du LLM."""
-    return json.dumps(payload, ensure_ascii=False)
-
-
-@pytest.fixture
-def fake_llm(client: TestClient) -> Iterator[FakeClient]:
-    """Remplace le client Mistral par un faux ; les réponses sont fixées par chaque test."""
-    fake = FakeClient()
-    app.dependency_overrides[get_llm_client] = lambda: fake
-    yield fake
-
-
-def use_replies(fake: FakeClient, *replies: Mapping[str, object] | str) -> None:
-    """Programme la suite de réponses du faux client."""
-    fake.queue(*[r if isinstance(r, str) else as_json(r) for r in replies])
-
-
-def llm_calls(conn: sqlite3.Connection) -> list[str]:
-    """Fonctionnalités journalisées dans `llm_calls`."""
-    return [row["feature"] for row in conn.execute("SELECT feature FROM llm_calls ORDER BY id")]
 
 
 def generate(client: TestClient) -> dict[str, object]:

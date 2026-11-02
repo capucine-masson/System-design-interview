@@ -1,11 +1,15 @@
 import ManagerHistory from "../components/ManagerHistory";
+import SdSessionList from "../components/SdSessionList";
 
 export default function Historique() {
   return (
     <section>
       <h1>Historique</h1>
       <ManagerHistory />
-      <p className="muted">Les sessions de System Design apparaîtront ici à une prochaine étape.</p>
+      <SdSessionList
+        title="System Design"
+        emptyHint="Tes sessions de System Design apparaîtront ici, avec ton schéma."
+      />
     </section>
   );
 }

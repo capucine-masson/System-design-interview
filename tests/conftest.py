@@ -24,7 +24,8 @@ for key, value in TEST_ENV.items():
 
 from api.config import Settings, load_settings  # noqa: E402
 from api.db import connect, migrate  # noqa: E402
-from api.deps import get_conn, get_settings  # noqa: E402
+from api.deps import get_conn, get_llm_client, get_settings  # noqa: E402
+from api.llm import FakeClient  # noqa: E402
 from api.main import app  # noqa: E402
 
 
@@ -48,6 +49,14 @@ def client(conn: sqlite3.Connection, settings: Settings) -> Iterator[TestClient]
     app.dependency_overrides[get_settings] = lambda: settings
     yield TestClient(app)
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def fake_llm(client: TestClient) -> FakeClient:
+    """Remplace le client Mistral par un faux ; chaque test programme ses réponses."""
+    fake = FakeClient()
+    app.dependency_overrides[get_llm_client] = lambda: fake
+    return fake
 
 
 @pytest.fixture
