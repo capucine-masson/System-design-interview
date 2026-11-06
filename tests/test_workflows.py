@@ -171,3 +171,29 @@ def test_review_validates_input_and_card(client: TestClient, fake_llm: FakeClien
     unknown = client.post(f"{BASE}/cards/999999/review", json={"transcription": "x"})
     assert (empty.status_code, unknown.status_code) == (422, 404)
     assert fake_llm.calls == []
+
+
+# --- Coche manuelle d'une catégorie ---
+
+
+@pytest.mark.usefixtures("seeded")
+def test_theme_done_is_manual_and_independent_of_cards(
+    client: TestClient, seeded: sqlite3.Connection
+) -> None:
+    """La coche d'une catégorie se règle à la main, survit au seed et ne touche pas aux cartes."""
+    slug = THEMES[0].slug
+    assert client.get(f"{BASE}/themes").json()[0]["fait"] is False
+    assert client.put(f"{BASE}/themes/{slug}/done", json={"fait": True}).status_code == 204
+    seed_workflows(seeded)
+    first = client.get(f"{BASE}/themes").json()[0]
+    assert first["fait"] is True
+    assert first["maitrisees"] == 0
+    client.put(f"{BASE}/themes/{slug}/done", json={"fait": False})
+    assert client.get(f"{BASE}/themes").json()[0]["fait"] is False
+
+
+@pytest.mark.usefixtures("seeded")
+def test_theme_done_unknown_category_is_404(client: TestClient) -> None:
+    """Une catégorie inconnue renvoie 404."""
+    response = client.put(f"{BASE}/themes/inconnue/done", json={"fait": True})
+    assert response.status_code == 404

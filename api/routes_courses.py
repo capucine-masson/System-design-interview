@@ -6,7 +6,15 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from api import course_review, courses
 from api.config import Settings
-from api.course_models import CardOut, CourseAnswerIn, CourseReview, ProgressIn, Statut, ThemeOut
+from api.course_models import (
+    CardOut,
+    CourseAnswerIn,
+    CourseReview,
+    ProgressIn,
+    Statut,
+    ThemeDoneIn,
+    ThemeOut,
+)
 from api.deps import get_conn, get_llm_client, get_request_lang, get_settings
 from api.lang import Lang, msg
 from api.llm import LLMClient
@@ -22,6 +30,17 @@ def themes(
 ) -> list[ThemeOut]:
     """Liste les thèmes avec leur progression, dans la langue demandée."""
     return courses.list_themes(conn, lang)
+
+
+@router.put("/themes/{slug}/done")
+def update_theme_done(
+    slug: str, body: ThemeDoneIn, conn: sqlite3.Connection = Depends(get_conn)
+) -> Response:
+    """Coche ou décoche un thème comme maîtrisé (indépendant des cartes)."""
+    if not courses.theme_exists(conn, slug):
+        raise HTTPException(404, msg("Thème introuvable.", "Theme not found."))
+    courses.set_theme_done(conn, slug, body.fait)
+    return Response(status_code=204)
 
 
 @router.get("/themes/{slug}/cards")

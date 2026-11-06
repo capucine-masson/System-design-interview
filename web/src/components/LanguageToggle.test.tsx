@@ -15,15 +15,14 @@ describe("bouton de langue", () => {
       </>,
     );
     expect(screen.getByRole("button", { name: "Français" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByText("Mode sombre")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Mode sombre" })).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "English" }));
 
     expect(getLang()).toBe("en");
     expect(screen.getByRole("button", { name: "English" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Français" })).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByText("Dark mode")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Change theme" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Dark mode" })).toBeInTheDocument();
   });
 
   it("envoie la langue choisie à l'API dans l'en-tête X-Lang", async () => {

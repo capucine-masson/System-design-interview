@@ -41,6 +41,8 @@ export interface Theme {
   total: number;
   maitrisees: number;
   a_revoir: number;
+  /** Coche manuelle : « je pense maîtriser ce thème ». */
+  fait: boolean;
 }
 
 export interface Card {

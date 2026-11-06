@@ -76,6 +76,13 @@ export const getUsage =(): Promise<UsageSummary> => request<UsageSummary>("/api/
 
 export const getThemes = (): Promise<Theme[]> => request<Theme[]>("/api/themes");
 
+export const setThemeDone = (slug: string, fait: boolean): Promise<void> =>
+  request<void>(`/api/themes/${encodeURIComponent(slug)}/done`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fait }),
+  });
+
 export const getCards = (slug: string, statut?: Statut): Promise<Card[]> =>
   request<Card[]>(`/api/themes/${encodeURIComponent(slug)}/cards${query({ statut })}`);
 
@@ -104,7 +111,14 @@ const WORKFLOWS = "/api/workflows";
 export const getWorkflowThemes = (): Promise<Theme[]> =>
   request<Theme[]>(`${WORKFLOWS}/themes`);
 
-export const getWorkflowCards = (slug: string, statut?: Statut): Promise<Card[]> =>
+export const setWorkflowThemeDone = (slug: string, fait: boolean): Promise<void> =>
+  request<void>(`${WORKFLOWS}/themes/${encodeURIComponent(slug)}/done`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fait }),
+  });
+
+export const getWorkflowCards =(slug: string, statut?: Statut): Promise<Card[]> =>
   request<Card[]>(`${WORKFLOWS}/themes/${encodeURIComponent(slug)}/cards${query({ statut })}`);
 
 export const drawWorkflowCards = (options: {

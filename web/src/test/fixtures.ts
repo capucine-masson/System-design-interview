@@ -38,4 +38,5 @@ export const THEME: Theme = {
   total: 2,
   maitrisees: 1,
   a_revoir: 1,
+  fait: false,
 };

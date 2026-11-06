@@ -97,6 +97,13 @@ class ThemeOut(BaseModel):
     total: int
     maitrisees: int
     a_revoir: int
+    fait: bool
+
+
+class ThemeDoneIn(BaseModel):
+    """Coche manuelle d'un thème (ressenti personnel, sans effet sur les cartes)."""
+
+    fait: bool
 
 
 class CardOut(BaseModel):

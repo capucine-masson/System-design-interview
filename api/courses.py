@@ -45,7 +45,7 @@ def list_themes(conn: sqlite3.Connection, lang: Lang) -> list[ThemeOut]:
         "COALESCE(tt.source_label, t.source_label) AS source_label, t.source_url, "
         "COUNT(c.id) AS total, "
         "COALESCE(SUM(p.statut = 'maitrisee'), 0) AS maitrisees, "
-        "COALESCE(SUM(p.statut = 'a_revoir'), 0) AS a_revoir "
+        "COALESCE(SUM(p.statut = 'a_revoir'), 0) AS a_revoir, t.fait AS fait "
         "FROM themes t LEFT JOIN cards c ON c.theme_id = t.id "
         "LEFT JOIN theme_translations tt ON tt.theme_id = t.id AND tt.lang = ? "
         "LEFT JOIN card_progress p ON p.card_id = c.id "
@@ -58,6 +58,12 @@ def list_themes(conn: sqlite3.Connection, lang: Lang) -> list[ThemeOut]:
 def theme_exists(conn: sqlite3.Connection, slug: str) -> bool:
     """Indique si un thème existe."""
     return conn.execute("SELECT 1 FROM themes WHERE slug = ?", (slug,)).fetchone() is not None
+
+
+def set_theme_done(conn: sqlite3.Connection, slug: str, fait: bool) -> None:
+    """Enregistre la coche manuelle d'un thème."""
+    conn.execute("UPDATE themes SET fait = ? WHERE slug = ?", (int(fait), slug))
+    conn.commit()
 
 
 def list_cards(

@@ -37,7 +37,7 @@ def list_themes(conn: sqlite3.Connection) -> list[ThemeOut]:
         "SELECT t.slug, t.titre, t.source_label, t.source_url, "
         "COUNT(c.id) AS total, "
         "COALESCE(SUM(p.statut = 'maitrisee'), 0) AS maitrisees, "
-        "COALESCE(SUM(p.statut = 'a_revoir'), 0) AS a_revoir "
+        "COALESCE(SUM(p.statut = 'a_revoir'), 0) AS a_revoir, t.fait AS fait "
         "FROM wf_themes t LEFT JOIN wf_cards c ON c.theme_id = t.id "
         "LEFT JOIN wf_card_progress p ON p.card_id = c.id "
         "GROUP BY t.id ORDER BY t.ordre, t.id"
@@ -48,6 +48,12 @@ def list_themes(conn: sqlite3.Connection) -> list[ThemeOut]:
 def theme_exists(conn: sqlite3.Connection, slug: str) -> bool:
     """Indique si une catégorie existe."""
     return conn.execute("SELECT 1 FROM wf_themes WHERE slug = ?", (slug,)).fetchone() is not None
+
+
+def set_theme_done(conn: sqlite3.Connection, slug: str, fait: bool) -> None:
+    """Enregistre la coche manuelle d'une catégorie."""
+    conn.execute("UPDATE wf_themes SET fait = ? WHERE slug = ?", (int(fait), slug))
+    conn.commit()
 
 
 def list_cards(conn: sqlite3.Connection, slug: str, statut: Statut | None) -> list[CardOut]:

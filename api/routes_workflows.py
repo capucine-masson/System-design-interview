@@ -6,7 +6,15 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from api import workflows, workflows_review
 from api.config import Settings
-from api.course_models import CardOut, CourseAnswerIn, CourseReview, ProgressIn, Statut, ThemeOut
+from api.course_models import (
+    CardOut,
+    CourseAnswerIn,
+    CourseReview,
+    ProgressIn,
+    Statut,
+    ThemeDoneIn,
+    ThemeOut,
+)
 from api.deps import get_conn, get_llm_client, get_request_lang, get_settings
 from api.lang import Lang, msg
 from api.llm import LLMClient
@@ -20,6 +28,17 @@ router = APIRouter(prefix="/api/workflows")
 def themes(conn: sqlite3.Connection = Depends(get_conn)) -> list[ThemeOut]:
     """Liste les catégories avec leur progression."""
     return workflows.list_themes(conn)
+
+
+@router.put("/themes/{slug}/done")
+def update_theme_done(
+    slug: str, body: ThemeDoneIn, conn: sqlite3.Connection = Depends(get_conn)
+) -> Response:
+    """Coche ou décoche une catégorie comme maîtrisée (indépendant des cartes)."""
+    if not workflows.theme_exists(conn, slug):
+        raise HTTPException(404, msg("Catégorie introuvable.", "Category not found."))
+    workflows.set_theme_done(conn, slug, body.fait)
+    return Response(status_code=204)
 
 
 @router.get("/themes/{slug}/cards")

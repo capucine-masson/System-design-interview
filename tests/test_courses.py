@@ -231,3 +231,17 @@ def test_random_empty_is_404(client: TestClient, seeded: sqlite3.Connection) -> 
     response = client.get("/api/cards/random?statut=a_revoir")
     assert response.status_code == 404
     assert "carte" in response.json()["detail"].lower()
+
+
+def test_theme_done_is_manual_and_survives_reseed(
+    client: TestClient, seeded: sqlite3.Connection
+) -> None:
+    """La coche d'un thème se règle à la main, survit au seed et ne touche pas aux cartes."""
+    slug = client.get("/api/themes").json()[0]["slug"]
+    assert client.get("/api/themes").json()[0]["fait"] is False
+    assert client.put(f"/api/themes/{slug}/done", json={"fait": True}).status_code == 204
+    seed_all(seeded)
+    first = client.get("/api/themes").json()[0]
+    assert first["fait"] is True
+    assert first["maitrisees"] == 0
+    assert client.put("/api/themes/inconnu/done", json={"fait": True}).status_code == 404
