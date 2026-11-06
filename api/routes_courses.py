@@ -76,11 +76,12 @@ def draw_cards(
     theme: str | None = None,
     statut: Statut | None = None,
     limit: int | None = Query(default=None, ge=1, le=MAX_DRAW),
+    essentielle: bool = False,
     conn: sqlite3.Connection = Depends(get_conn),
     lang: Lang = Depends(get_request_lang),
 ) -> list[CardOut]:
     """Tire une série de cartes distinctes pour une session de révision (toutes sans `limit`)."""
-    cards = courses.draw_cards(conn, theme, statut, limit, lang)
+    cards = courses.draw_cards(conn, theme, statut, limit, lang, essentielle)
     if not cards:
         raise HTTPException(404, msg("Aucune carte à réviser.", "No card to review."))
     return cards

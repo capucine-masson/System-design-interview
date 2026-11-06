@@ -34,6 +34,7 @@
   --transition-page: 260ms cubic-bezier(0.2, 0, 0, 1);
   --content-width: 960px;
   --page-width: 1200px;
+  --topbar-height: 73px;
   --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
@@ -723,6 +724,50 @@ a {
   max-width: var(--content-width);
 }
 
+/* Réglages compacts : le `.toolbar` global ajoute une marge basse inutile ici. */
+.revision-setup .toolbar {
+  margin-bottom: 0;
+}
+
+.revision-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.check input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+.check-star {
+  width: 16px;
+  height: 16px;
+  color: var(--color-essential);
+}
+
+.revision-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.revision-footer p {
+  margin: 0;
+}
+
 /* Révision : tout tient dans l'écran, sans défilement */
 .revision-page .page-head {
   margin-bottom: var(--space-3);
@@ -1261,30 +1306,152 @@ textarea:focus-visible {
   min-width: 260px;
 }
 
-.chart {
-  width: 100%;
-  height: auto;
+/* --- Consommation API : tient dans la fenêtre, sans défilement --- */
+
+/* La page occupe exactement le reste de la fenêtre sous la barre, quelle que soit sa hauteur. */
+.layout:has(.usage-page) {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
 }
 
-.chart-grid {
+.layout:has(.usage-page) .content {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-3);
+}
+
+.usage-page h1 {
+  font-size: 1.375rem;
+}
+
+.usage-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  height: 100%;
+  overflow: hidden;
+}
+
+.usage-page h1,
+.usage-subtitle {
+  margin: 0;
+}
+
+.usage-subtitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.usage-metrics,
+.usage-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-3);
+}
+
+.usage-metric,
+.usage-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: var(--space-2) var(--space-3);
+}
+
+.usage-metric strong {
+  font-size: 1.25rem;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.usage-metric:first-child strong,
+.usage-metric:nth-child(2) strong {
+  color: var(--color-accent);
+}
+
+.usage-group strong {
+  font-size: 1rem;
+  line-height: 1.3;
+}
+
+.usage-group .muted,
+.usage-metric .muted {
+  font-size: 0.875rem;
+}
+
+.usage-group-name {
+  font-weight: 600;
+}
+
+.usage-chart-card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-height: 240px;
+  padding: var(--space-2) var(--space-3);
+}
+
+.usage-chart-card h2 {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.usage-chart {
+  display: grid;
+  flex: 1;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: var(--space-1) var(--space-2);
+  min-height: 0;
+}
+
+.usage-chart-y,
+.usage-chart-x {
+  display: flex;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.usage-chart-y {
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: right;
+}
+
+.usage-chart-x {
+  grid-column: 2;
+  justify-content: space-between;
+}
+
+.usage-chart-plot {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.usage-chart-grid {
   stroke: var(--color-border);
   stroke-width: 1;
+  vector-effect: non-scaling-stroke;
 }
 
-.chart-label {
-  fill: var(--color-muted);
-  font-family: var(--font);
-  font-size: 11px;
+.usage-chart-area {
+  fill: var(--color-accent-bg);
 }
 
-.chart-line {
+.usage-chart-line {
   fill: none;
   stroke: var(--color-accent);
   stroke-width: 2;
-}
-
-.chart-dot {
-  fill: var(--color-accent);
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
 }
 
 @media (max-width: 640px) {

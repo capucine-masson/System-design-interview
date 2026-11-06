@@ -1,16 +1,22 @@
 import type { Lang } from "./i18n";
 
-export interface FeatureUsage {
-  feature: string;
+export interface GroupUsage {
+  group: string;
   calls: number;
   tokens_in: number;
   tokens_out: number;
   cost_estimate: number;
 }
 
+export interface UsagePoint {
+  at: string;
+  tokens: number;
+}
+
 export interface UsageSummary {
-  total: FeatureUsage;
-  by_feature: FeatureUsage[];
+  total: GroupUsage;
+  by_group: GroupUsage[];
+  timeline: UsagePoint[];
 }
 
 export type Statut = "maitrisee" | "a_revoir";
@@ -41,6 +47,8 @@ export interface Theme {
   total: number;
   maitrisees: number;
   a_revoir: number;
+  essentielles: number;
+  essentielles_a_revoir: number;
   /** Coche manuelle : « je pense maîtriser ce thème ». */
   fait: boolean;
 }

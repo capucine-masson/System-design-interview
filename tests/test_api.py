@@ -15,25 +15,36 @@ def test_health(client: TestClient) -> None:
 
 
 def test_usage_empty(client: TestClient) -> None:
-    """Sans appel, les totaux sont à zéro."""
+    """Sans appel, les totaux sont à zéro et les quatre exercices sont présents."""
     body = client.get("/api/usage").json()
     assert body["total"]["calls"] == 0
-    assert body["by_feature"] == []
+    assert [g["group"] for g in body["by_group"]] == [
+        "cours",
+        "workflows",
+        "manager",
+        "system_design",
+    ]
+    assert body["timeline"] == []
 
 
-def test_usage_aggregates_by_feature(
+def test_usage_aggregates_by_exercise(
     client: TestClient, conn: sqlite3.Connection, settings: Settings
 ) -> None:
-    """La consommation est regroupée par fonctionnalité."""
+    """La consommation est regroupée par exercice, avec la courbe des derniers appels."""
     fake = FakeClient(tokens_in=10, tokens_out=5)
-    for feature in ("manager", "manager", "system_design"):
+    for feature in ("manager_question", "manager_feedback", "sd_brief", "course_review", "autre_x"):
         complete(conn, settings, fake, feature, [Message("user", "x")])
     body = client.get("/api/usage").json()
-    by = {f["feature"]: f for f in body["by_feature"]}
+    by = {g["group"]: g for g in body["by_group"]}
     assert by["manager"]["calls"] == 2
     assert by["manager"]["tokens_in"] == 20
-    assert body["total"]["calls"] == 3
-    assert body["total"]["tokens_out"] == 15
+    assert by["system_design"]["calls"] == 1
+    assert by["cours"]["calls"] == 1
+    assert by["workflows"]["calls"] == 0
+    assert by["autre"]["calls"] == 1
+    assert body["total"]["calls"] == 5
+    assert body["total"]["tokens_out"] == 25
+    assert [p["tokens"] for p in body["timeline"]] == [15] * 5
 
 
 def test_missing_env_variable_raises_clear_error(monkeypatch: pytest.MonkeyPatch) -> None:

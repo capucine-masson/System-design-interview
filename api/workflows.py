@@ -37,7 +37,10 @@ def list_themes(conn: sqlite3.Connection) -> list[ThemeOut]:
         "SELECT t.slug, t.titre, t.source_label, t.source_url, "
         "COUNT(c.id) AS total, "
         "COALESCE(SUM(p.statut = 'maitrisee'), 0) AS maitrisees, "
-        "COALESCE(SUM(p.statut = 'a_revoir'), 0) AS a_revoir, t.fait AS fait "
+        "COALESCE(SUM(p.statut = 'a_revoir'), 0) AS a_revoir, "
+        "COALESCE(SUM(c.essentielle), 0) AS essentielles, "
+        "COALESCE(SUM(c.essentielle AND p.statut = 'a_revoir'), 0) AS essentielles_a_revoir, "
+        "t.fait AS fait "
         "FROM wf_themes t LEFT JOIN wf_cards c ON c.theme_id = t.id "
         "LEFT JOIN wf_card_progress p ON p.card_id = c.id "
         "GROUP BY t.id ORDER BY t.ordre, t.id"
@@ -88,10 +91,14 @@ def set_progress(conn: sqlite3.Connection, card_id: int, statut: Statut | None) 
 
 
 def draw_cards(
-    conn: sqlite3.Connection, slug: str | None, statut: Statut | None, limit: int | None
+    conn: sqlite3.Connection,
+    slug: str | None,
+    statut: Statut | None,
+    limit: int | None,
+    essentielle: bool = False,
 ) -> list[CardOut]:
     """Tire au hasard jusqu'à `limit` cartes distinctes (toutes si `limit` est absent)."""
-    clauses: list[str] = []
+    clauses: list[str] = ["c.essentielle = 1"] if essentielle else []
     params: list[str | int] = []
     if slug is not None:
         clauses.append("t.slug = ?")

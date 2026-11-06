@@ -19,11 +19,21 @@ function errorText(err: unknown, fallback: string): string {
   return err instanceof Error ? err.message : fallback;
 }
 
-/** Nombre de cartes tirables selon le thème (ou tous) et le filtre « à revoir ». */
-function availableCards(themes: Theme[], slug: string | undefined, onlyToReview: boolean): number {
+function cardsOf(theme: Theme, onlyToReview: boolean, onlyEssential: boolean): number {
+  if (onlyEssential) return onlyToReview ? theme.essentielles_a_revoir : theme.essentielles;
+  return onlyToReview ? theme.a_revoir : theme.total;
+}
+
+/** Nombre de cartes tirables selon le thème (ou tous) et les filtres « à revoir » / « indispensables ». */
+function availableCards(
+  themes: Theme[],
+  slug: string | undefined,
+  onlyToReview: boolean,
+  onlyEssential: boolean,
+): number {
   return themes
     .filter((theme) => slug === undefined || theme.slug === slug)
-    .reduce((sum, theme) => sum + (onlyToReview ? theme.a_revoir : theme.total), 0);
+    .reduce((sum, theme) => sum + cardsOf(theme, onlyToReview, onlyEssential), 0);
 }
 
 export default function Revision() {
@@ -33,6 +43,7 @@ export default function Revision() {
   const [themes, setThemes] = useState<Theme[]>([]);
   const [count, setCount] = useState<RevisionCount>(DEFAULT_COUNT);
   const [onlyToReview, setOnlyToReview] = useState(false);
+  const [onlyEssential, setOnlyEssential] = useState(false);
   const [phase, setPhase] = useState<Phase>("setup");
   const [cards, setCards] = useState<Card[]>([]);
   const [index, setIndex] = useState(0);
@@ -54,7 +65,7 @@ export default function Revision() {
   });
 
   const card = cards[index];
-  const available = availableCards(themes, theme, onlyToReview);
+  const available = availableCards(themes, theme, onlyToReview, onlyEssential);
 
   const start = async (): Promise<void> => {
     setLoading(true);
@@ -64,6 +75,7 @@ export default function Revision() {
         theme,
         statut: onlyToReview ? "a_revoir" : undefined,
         limit: count === "max" ? undefined : count,
+        essentielle: onlyEssential || undefined,
       });
       setCards(drawn);
       setIndex(0);
@@ -132,9 +144,11 @@ export default function Revision() {
             available={available}
             count={count}
             onlyToReview={onlyToReview}
+            onlyEssential={onlyEssential}
             loading={loading}
             onCount={setCount}
             onToggleToReview={() => setOnlyToReview((value) => !value)}
+            onToggleEssential={() => setOnlyEssential((value) => !value)}
             onStart={() => void start()}
           />
           {error && (

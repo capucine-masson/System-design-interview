@@ -62,6 +62,19 @@ describe("Revision", () => {
     });
   });
 
+  it("« seulement les indispensables » filtre le tirage", async () => {
+    vi.mocked(api.drawCards).mockResolvedValue([CARD]);
+    renderPage();
+    await userEvent.click(await screen.findByRole("checkbox", { name: /indispensables/ }));
+    await start();
+    expect(api.drawCards).toHaveBeenCalledWith({
+      theme: undefined,
+      statut: undefined,
+      limit: 10,
+      essentielle: true,
+    });
+  });
+
   it("corrige l'explication puis passe à la carte suivante et termine", async () => {
     vi.mocked(api.drawCards).mockResolvedValue([CARD, CARD_2]);
     vi.mocked(api.reviewCard).mockResolvedValue(REVIEW);

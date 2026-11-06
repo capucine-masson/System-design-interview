@@ -97,6 +97,8 @@ class ThemeOut(BaseModel):
     total: int
     maitrisees: int
     a_revoir: int
+    essentielles: int
+    essentielles_a_revoir: int
     fait: bool
 
 

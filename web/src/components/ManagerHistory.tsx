@@ -5,7 +5,6 @@ import { useI18n } from "../i18n";
 import { categorieLabel, CRITERIA, difficulteLabel } from "../managerLabels";
 import type { SessionSummary } from "../types";
 import EmptyState from "./EmptyState";
-import ScoreChart from "./ScoreChart";
 
 const DECIMALS = 1;
 const MAX_ENONCE_CHARS = 90;
@@ -40,10 +39,6 @@ export default function ManagerHistory() {
       )}
       {sessions && sessions.length > 0 && (
         <>
-          <div className="card">
-            <h3>{t("history.trend")}</h3>
-            <ScoreChart sessions={sessions} />
-          </div>
           <div className="card table-wrap">
             <table className="table history-table">
               <thead>

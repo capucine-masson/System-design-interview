@@ -45,7 +45,10 @@ def list_themes(conn: sqlite3.Connection, lang: Lang) -> list[ThemeOut]:
         "COALESCE(tt.source_label, t.source_label) AS source_label, t.source_url, "
         "COUNT(c.id) AS total, "
         "COALESCE(SUM(p.statut = 'maitrisee'), 0) AS maitrisees, "
-        "COALESCE(SUM(p.statut = 'a_revoir'), 0) AS a_revoir, t.fait AS fait "
+        "COALESCE(SUM(p.statut = 'a_revoir'), 0) AS a_revoir, "
+        "COALESCE(SUM(c.essentielle), 0) AS essentielles, "
+        "COALESCE(SUM(c.essentielle AND p.statut = 'a_revoir'), 0) AS essentielles_a_revoir, "
+        "t.fait AS fait "
         "FROM themes t LEFT JOIN cards c ON c.theme_id = t.id "
         "LEFT JOIN theme_translations tt ON tt.theme_id = t.id AND tt.lang = ? "
         "LEFT JOIN card_progress p ON p.card_id = c.id "
@@ -119,9 +122,10 @@ def draw_cards(
     statut: Statut | None,
     limit: int | None,
     lang: Lang,
+    essentielle: bool = False,
 ) -> list[CardOut]:
     """Tire au hasard jusqu'à `limit` cartes distinctes (toutes si `limit` est absent)."""
-    where, params = _filters(slug, statut, lang)
+    where, params = _filters(slug, statut, lang, essentielle)
     sql = CARD_SELECT + where + "ORDER BY RANDOM()"
     if limit is not None:
         sql += " LIMIT ?"
@@ -129,9 +133,11 @@ def draw_cards(
     return [_to_card(row) for row in conn.execute(sql, params).fetchall()]
 
 
-def _filters(slug: str | None, statut: Statut | None, lang: Lang) -> tuple[str, list[str | int]]:
-    """Clause WHERE optionnelle (thème, statut) et paramètres SQL, langue en premier."""
-    clauses: list[str] = []
+def _filters(
+    slug: str | None, statut: Statut | None, lang: Lang, essentielle: bool = False
+) -> tuple[str, list[str | int]]:
+    """Clause WHERE optionnelle (thème, statut, essentielles) et paramètres SQL (langue d'abord)."""
+    clauses: list[str] = ["c.essentielle = 1"] if essentielle else []
     params: list[str | int] = [lang]
     if slug is not None:
         clauses.append("t.slug = ?")

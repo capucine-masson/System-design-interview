@@ -27,21 +27,6 @@ describe("ManagerHistory", () => {
     expect(screen.getAllByText("4")).toHaveLength(2);
   });
 
-  it("indique qu'il faut deux entretiens notés pour voir une évolution", async () => {
-    vi.mocked(api.listSessions).mockResolvedValue([SUMMARY]);
-    renderIt();
-    expect(await screen.findByText(/au moins deux entretiens/)).toBeInTheDocument();
-  });
-
-  it("trace la courbe d'évolution avec deux sessions notées", async () => {
-    vi.mocked(api.listSessions).mockResolvedValue([
-      { ...SUMMARY, id: 8, moyenne: 4 },
-      SUMMARY,
-    ]);
-    renderIt();
-    expect(await screen.findByRole("img", { name: "Évolution de la moyenne des notes" })).toBeInTheDocument();
-  });
-
   it("affiche « en cours » et des tirets pour une session sans retour", async () => {
     vi.mocked(api.listSessions).mockResolvedValue([
       { ...SUMMARY, statut: "en_cours", notes: null, moyenne: null },
