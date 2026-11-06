@@ -292,6 +292,25 @@ def test_diagram_conversion_is_tolerant() -> None:
     assert diagram.edges[1].label is None
 
 
+def test_diagram_drops_backward_links() -> None:
+    """Un lien vers une colonne plus à gauche (arc de retour illisible) est ignoré."""
+    schema = RefDiagram(
+        noeuds=[
+            RefNode(id="a", label="A", col=0, row=1),
+            RefNode(id="b", label="B", col=1, row=1),
+            RefNode(id="c", label="C", col=1, row=0),
+        ],
+        liens=[
+            RefLink(source="a", cible="b", label=""),
+            RefLink(source="b", cible="a", label="retour"),
+            RefLink(source="b", cible="c", label=""),
+        ],
+    )
+    diagram = to_diagram(schema)
+    assert diagram is not None
+    assert [(e.source, e.target) for e in diagram.edges] == [("a", "b"), ("b", "c")]
+
+
 def test_diagram_with_fewer_than_two_nodes_is_dropped() -> None:
     """Un schéma inexploitable est simplement omis (le reste de la correction s'affiche)."""
     assert (

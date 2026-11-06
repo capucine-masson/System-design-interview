@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { listSdSessions } from "../api";
+import { useI18n } from "../i18n";
 import { formatDuration } from "../managerLabels";
 import type { SdSessionSummary } from "../types";
 import EmptyState from "./EmptyState";
 
-const formatDate = (iso: string): string =>
-  new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
+const formatDate = (iso: string, locale: string): string =>
+  new Date(iso).toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" });
 
 interface SdSessionListProps {
   title: string;
@@ -16,6 +17,7 @@ interface SdSessionListProps {
 
 /** Sessions de System Design à rouvrir (en cours ou terminées). */
 export default function SdSessionList({ title, emptyHint }: SdSessionListProps) {
+  const { t, locale } = useI18n();
   const [sessions, setSessions] = useState<SdSessionSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,16 +31,17 @@ export default function SdSessionList({ title, emptyHint }: SdSessionListProps) 
     <section aria-label={title}>
       <h2>{title}</h2>
       {error && <div className="notice notice-error">{error}</div>}
-      {!error && !sessions && <p className="muted">Chargement…</p>}
-      {sessions && sessions.length === 0 && <EmptyState title="Aucune session" hint={emptyHint} />}
+      {!error && !sessions && <p className="muted">{t("common.loading")}</p>}
+      {sessions && sessions.length === 0 && <EmptyState title={t("common.noSession")} hint={emptyHint} />}
       {sessions && sessions.length > 0 && (
         <ul className="session-list">
           {sessions.map((s) => (
             <li key={s.id} className="card">
               <Link to={`/system-design/sessions/${s.id}`}>{s.titre}</Link>
               <p className="muted">
-                {formatDate(s.created_at)} · {s.nb_messages} messages · {formatDuration(s.elapsed_s)}
-                {s.statut === "en_cours" ? " · en cours" : " · terminée"}
+                {formatDate(s.created_at, locale)} · {t("sd.messages", { n: s.nb_messages })} ·{" "}
+                {formatDuration(s.elapsed_s)}
+                {` · ${s.statut === "en_cours" ? t("sd.inProgress") : t("sd.finished")}`}
               </p>
             </li>
           ))}

@@ -4,6 +4,9 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from api.lang import Lang
+from api.sd_catalog_en import CASE_TEXTS_EN
+
 Famille = Literal["ml", "classique"]
 
 
@@ -15,6 +18,15 @@ class CaseType(BaseModel):
     titre: str
     description: str
     axes: list[str]
+
+    def localized(self, lang: Lang) -> "CaseType":
+        """Copie du type avec titre, description et axes dans la langue demandée."""
+        text = CASE_TEXTS_EN.get(self.slug)
+        if lang == "fr" or text is None:
+            return self
+        return self.model_copy(
+            update={"titre": text.titre, "description": text.description, "axes": text.axes}
+        )
 
 
 CASE_TYPES: list[CaseType] = [
@@ -290,6 +302,115 @@ CASE_TYPES: list[CaseType] = [
             "tolérance aux pannes et reprise",
             "latence en lecture et en écriture",
             "compactage et stockage sur disque",
+        ],
+    ),
+    CaseType(
+        slug="sessions-utilisateur",
+        famille="classique",
+        titre="Gestion des sessions utilisateur (connexion, déconnexion, expiration)",
+        description="Authentifier des utilisateurs et gérer leurs sessions de façon sûre.",
+        axes=[
+            "utilisateurs actifs et connexions par seconde",
+            "sessions serveur ou jetons (JWT)",
+            "stockage des sessions (cache partagé)",
+            "expiration, renouvellement et déconnexion sur tous les appareils",
+            "vol de session et sécurité",
+            "tolérance aux pannes et montée en charge",
+        ],
+    ),
+    CaseType(
+        slug="permissions",
+        famille="classique",
+        titre="Gestion des permissions (rôles et contrôle d'accès)",
+        description="Décider qui peut faire quoi sur quelles ressources, dans une organisation.",
+        axes=[
+            "utilisateurs, ressources et vérifications par seconde",
+            "modèle d'accès (RBAC, ABAC, héritage)",
+            "latence des vérifications et cache",
+            "révocation et propagation des changements",
+            "journal d'audit",
+            "administration et délégation des droits",
+        ],
+    ),
+    CaseType(
+        slug="commandes-en-ligne",
+        famille="classique",
+        titre="Commandes en ligne avec panier (type e-commerce)",
+        description="Gérer le panier, la création, le suivi et l'annulation de commandes.",
+        axes=[
+            "commandes par seconde et pics (soldes)",
+            "panier et réservation du stock",
+            "états de la commande et suivi",
+            "annulation, remboursement et cohérence",
+            "paiement et idempotence",
+            "notifications et intégration logistique",
+        ],
+    ),
+    CaseType(
+        slug="bibliotheque",
+        famille="classique",
+        titre="Gestion d'une bibliothèque de livres",
+        description="Ajouter, retirer et rechercher des livres, et gérer les emprunts.",
+        axes=[
+            "nombre de livres, d'exemplaires et d'utilisateurs",
+            "modèle de données (livre, exemplaire, emprunt)",
+            "recherche par titre, auteur ou sujet",
+            "emprunts, retours et réservations",
+            "concurrence sur un même exemplaire",
+            "multi-sites et évolution du catalogue",
+        ],
+    ),
+    CaseType(
+        slug="blog",
+        famille="classique",
+        titre="Plateforme de blog",
+        description="Créer, modifier, supprimer et publier des articles lus par beaucoup de monde.",
+        axes=[
+            "auteurs, articles et lectures par seconde",
+            "modèle de données et brouillons",
+            "cache et diffusion des pages publiées",
+            "recherche, tags et commentaires",
+            "éditeur, médias et versions",
+            "modération et sécurité du contenu",
+        ],
+    ),
+    CaseType(
+        slug="moe-serving",
+        titre="Serving d'un modèle Mixture-of-Experts de 70B avec cible de latence p95",
+        description="Servir un gros MoE à beaucoup d'utilisateurs en tenant une latence p95.",
+        axes=[
+            "trafic, longueur des prompts et cible de latence p95",
+            "routage des experts et équilibrage de charge",
+            "expert, tensor et pipeline parallelism entre GPU",
+            "budget mémoire GPU (poids, KV cache, activations)",
+            "batching continu et compromis latence contre débit",
+            "quantization, pannes de GPU et coût par token",
+        ],
+    ),
+    CaseType(
+        slug="api-multi-tenant",
+        titre="Limitation de débit et allocation de capacité d'une API LLM multi-tenant",
+        description="Répartir équitablement la capacité GPU entre des clients aux SLA différents.",
+        axes=[
+            "clients, paliers de SLA et capacité GPU disponible",
+            "quotas en tokens et en requêtes par minute",
+            "équité entre clients (noisy neighbor) et files prioritaires",
+            "rafales, rejet contre mise en file, dégradation gracieuse",
+            "état partagé des compteurs entre régions et latence ajoutée",
+            "mesure, facturation et alertes par client",
+        ],
+    ),
+    CaseType(
+        slug="lora-multi-adaptateurs",
+        titre="Fine-tuning et serving multi-adaptateurs LoRA pour des clients",
+        description="Proposer à chaque client son modèle adapté sans un GPU dédié par client.",
+        axes=[
+            "nombre de clients et taille des jeux de données",
+            "pipeline de fine-tuning LoRA et évaluation avant mise en ligne",
+            "un modèle de base partagé et des adaptateurs chargés à la demande",
+            "mémoire GPU, cache d'adaptateurs et démarrage à froid",
+            "isolation des données et des performances entre clients",
+            "versions, retour arrière et coût par client",
         ],
     ),
 ]

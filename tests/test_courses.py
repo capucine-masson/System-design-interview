@@ -89,10 +89,10 @@ def test_essential_flag_is_exposed_by_api(client: TestClient, seeded: sqlite3.Co
     assert {c["titre"] for c in cards if c["essentielle"]} == expected
 
 
-def test_all_nine_themes_are_registered() -> None:
-    """Les neuf thèmes demandés sont présents, avec des slugs uniques."""
+def test_all_thirteen_themes_are_registered() -> None:
+    """Les treize thèmes demandés sont présents, avec des slugs uniques."""
     slugs = [t.slug for t in THEMES]
-    assert len(slugs) == len(set(slugs)) == 9
+    assert len(slugs) == len(set(slugs)) == 13
 
 
 # --- Seed ---
@@ -186,6 +186,44 @@ def test_random_excludes_current_card(client: TestClient, seeded: sqlite3.Connec
     card_id = first_card_id(client)
     for _ in range(20):
         assert client.get(f"/api/cards/random?exclude={card_id}").json()["id"] != card_id
+
+
+def test_draw_returns_distinct_cards_up_to_limit(
+    client: TestClient, seeded: sqlite3.Connection
+) -> None:
+    """Le tirage de série respecte la limite, sans doublon."""
+    ids = [card["id"] for card in client.get("/api/cards/draw?limit=10").json()]
+    assert len(ids) == len(set(ids)) == 10
+
+
+def test_draw_without_limit_returns_every_card(
+    client: TestClient, seeded: sqlite3.Connection
+) -> None:
+    """Sans limite (« max »), toutes les cartes sont renvoyées ; limite trop grande = tout."""
+    total = sum(len(t.cards) for t in THEMES)
+    assert len(client.get("/api/cards/draw").json()) == total
+    assert len(client.get("/api/cards/draw?limit=500").json()) == total
+
+
+def test_draw_mixes_themes_and_filters_by_theme(
+    client: TestClient, seeded: sqlite3.Connection
+) -> None:
+    """Sans thème, les cartes viennent de plusieurs thèmes ; avec un thème, d'un seul."""
+    slug = THEMES[0].slug
+    mixed = {c["theme_slug"] for c in client.get("/api/cards/draw").json()}
+    assert len(mixed) == len(THEMES)
+    only = client.get(f"/api/cards/draw?theme={slug}&limit=5").json()
+    assert len(only) == 5
+    assert {c["theme_slug"] for c in only} == {slug}
+
+
+def test_draw_empty_is_404_and_bad_limit_is_422(
+    client: TestClient, seeded: sqlite3.Connection
+) -> None:
+    """Sans carte à revoir : 404 lisible ; limite hors bornes : 422."""
+    assert client.get("/api/cards/draw?statut=a_revoir").status_code == 404
+    assert client.get("/api/cards/draw?limit=0").status_code == 422
+    assert client.get("/api/cards/draw?limit=100000").status_code == 422
 
 
 def test_random_empty_is_404(client: TestClient, seeded: sqlite3.Connection) -> None:

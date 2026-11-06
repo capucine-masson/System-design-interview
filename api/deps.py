@@ -8,6 +8,7 @@ from fastapi import Depends
 
 from api.config import Settings, load_settings
 from api.db import connect
+from api.lang import Lang, current_lang
 from api.llm import LLMClient, MistralClient
 
 settings = load_settings()
@@ -25,6 +26,11 @@ def get_conn(cfg: Settings = Depends(get_settings)) -> Iterator[sqlite3.Connecti
         yield conn
     finally:
         conn.close()
+
+
+def get_request_lang() -> Lang:
+    """Dépendance : langue de la requête (en-tête X-Lang, lu par le middleware)."""
+    return current_lang()
 
 
 @lru_cache

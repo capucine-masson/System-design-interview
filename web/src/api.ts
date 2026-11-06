@@ -2,6 +2,7 @@ import type {
   Card,
   CaseType,
   CorrectionBundle,
+  CourseReview,
   Categorie,
   Difficulte,
   Question,
@@ -17,6 +18,7 @@ import type {
   Theme,
   UsageSummary,
 } from "./types";
+import { getLang, translate } from "./i18n";
 
 const API_URL = import.meta.env.VITE_API_URL;
 const HTTP_NO_CONTENT = 204;
@@ -30,17 +32,23 @@ export class ApiError extends Error {
   }
 }
 
+const LANG_HEADER = "X-Lang";
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  headers.set(LANG_HEADER, getLang());
   let response: Response;
   try {
-    response = await fetch(`${API_URL}${path}`, init);
+    response = await fetch(`${API_URL}${path}`, { ...init, headers });
   } catch {
-    throw new Error("API injoignable : le backend est-il lancé ?");
+    throw new Error(translate("common.apiDown"));
   }
   if (!response.ok) {
     const body: { detail?: string } = await response.json().catch(() => ({}));
     throw new ApiError(
-      typeof body.detail === "string" ? body.detail : `Erreur ${response.status}`,
+      typeof body.detail === "string"
+        ? body.detail
+        : translate("common.errorStatus", { status: response.status }),
       response.status,
     );
   }
@@ -71,14 +79,46 @@ export const getThemes = (): Promise<Theme[]> => request<Theme[]>("/api/themes")
 export const getCards = (slug: string, statut?: Statut): Promise<Card[]> =>
   request<Card[]>(`/api/themes/${encodeURIComponent(slug)}/cards${query({ statut })}`);
 
-export const getRandomCard = (options: {
+/** Série de cartes distinctes tirées au hasard ; sans `limit`, toutes les cartes (« max »). */
+export const drawCards = (options: {
   theme?: string;
   statut?: Statut;
-  exclude?: number;
-}): Promise<Card> => request<Card>(`/api/cards/random${query(options)}`);
+  limit?: number;
+}): Promise<Card[]> => request<Card[]>(`/api/cards/draw${query(options)}`);
+
+/** Correction IA de l'explication orale d'une carte (un appel IA, sur clic uniquement). */
+export const reviewCard = (cardId: number, transcription: string): Promise<CourseReview> =>
+  post<CourseReview>(`/api/cards/${cardId}/review`, { transcription });
 
 export const setProgress = (cardId: number, statut: Statut | null): Promise<void> =>
   request<void>(`/api/cards/${cardId}/progress`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ statut }),
+  });
+
+// --- Mistral Workflows (mêmes formes que les Cours, tables et routes séparées) ---
+
+const WORKFLOWS = "/api/workflows";
+
+export const getWorkflowThemes = (): Promise<Theme[]> =>
+  request<Theme[]>(`${WORKFLOWS}/themes`);
+
+export const getWorkflowCards = (slug: string, statut?: Statut): Promise<Card[]> =>
+  request<Card[]>(`${WORKFLOWS}/themes/${encodeURIComponent(slug)}/cards${query({ statut })}`);
+
+export const drawWorkflowCards = (options: {
+  theme?: string;
+  statut?: Statut;
+  limit?: number;
+}): Promise<Card[]> => request<Card[]>(`${WORKFLOWS}/cards/draw${query(options)}`);
+
+/** Correction IA de l'explication orale d'une carte Workflows (un appel IA, sur clic uniquement). */
+export const reviewWorkflowCard = (cardId: number, transcription: string): Promise<CourseReview> =>
+  post<CourseReview>(`${WORKFLOWS}/cards/${cardId}/review`, { transcription });
+
+export const setWorkflowProgress = (cardId: number, statut: Statut | null): Promise<void> =>
+  request<void>(`${WORKFLOWS}/cards/${cardId}/progress`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ statut }),

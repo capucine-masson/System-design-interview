@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, JsonValue, field_validator
 
+from api.lang import Lang
+
 SdStatut = Literal["en_cours", "terminee"]
 Role = Literal["user", "assistant"]
 
@@ -131,6 +133,7 @@ class CaseOut(BaseModel):
     type: str
     titre: str
     brief: str
+    lang: Lang
     nb_sessions: int
 
 

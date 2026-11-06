@@ -67,6 +67,26 @@ class ThemeContent(BaseModel):
     cards: list[CardContent]
 
 
+class CardTranslation(BaseModel):
+    """Texte d'une carte dans une autre langue (même ordre et mêmes boîtes que le français)."""
+
+    titre: str = Field(min_length=1, max_length=80)
+    accroche: str = Field(min_length=1, max_length=400)
+    points: list[str] = Field(min_length=MIN_POINTS, max_length=MAX_POINTS)
+    source_label: str = Field(min_length=1)
+    diagram_labels: list[str] = []  # libellés des boîtes, dans l'ordre du schéma français
+    edge_labels: list[str] = []  # libellés des flèches qui en ont un, dans l'ordre du français
+
+
+class ThemeTranslation(BaseModel):
+    """Thème traduit : mêmes cartes que le thème français (même slug), dans le même ordre."""
+
+    slug: str
+    titre: str
+    source_label: str
+    cards: list[CardTranslation]
+
+
 class ThemeOut(BaseModel):
     """Thème avec sa progression."""
 
@@ -92,6 +112,29 @@ class CardOut(BaseModel):
     source_url: str | None
     statut: Statut | None
     essentielle: bool
+
+
+MAX_ANSWER_CHARS = 4000
+MAX_REVIEW_ITEMS = 6
+
+Verdict = Literal["correct", "partiel", "faux"]
+
+
+class CourseAnswerIn(BaseModel):
+    """Explication orale (transcrite) de l'utilisateur pour une carte."""
+
+    transcription: str = Field(min_length=1, max_length=MAX_ANSWER_CHARS)
+
+
+class CourseReview(BaseModel):
+    """Correction IA : verdict, juste / oublis / erreurs, détails à savoir, version en 30 s."""
+
+    verdict: Verdict
+    points_justes: list[str] = Field(max_length=MAX_REVIEW_ITEMS)
+    points_manquants: list[str] = Field(max_length=MAX_REVIEW_ITEMS)
+    erreurs: list[str] = Field(max_length=MAX_REVIEW_ITEMS)
+    details: list[str] = Field(max_length=MAX_REVIEW_ITEMS)
+    explication_simple: str = Field(min_length=1)
 
 
 class ProgressIn(BaseModel):

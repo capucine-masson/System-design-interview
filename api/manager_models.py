@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from api.lang import Lang
+
 Categorie = Literal[
     "ambiguite", "decisions", "parties_prenantes", "technique", "comportemental", "mixte"
 ]
@@ -186,6 +188,7 @@ class QuestionOut(BaseModel):
     contraintes: list[str]
     enjeu: str
     enonce: str
+    lang: Lang
     nb_sessions: int
 
 

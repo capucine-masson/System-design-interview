@@ -4,6 +4,7 @@ import json
 import sqlite3
 from datetime import UTC, datetime
 
+from api.lang import Lang
 from api.manager_models import (
     MAX_ANSWERS,
     Categorie,
@@ -19,6 +20,7 @@ from api.manager_models import (
 
 QUESTION_SELECT = (
     "SELECT q.id, q.categorie, q.difficulte, q.contexte, q.contraintes_json, q.enjeu, q.enonce, "
+    "q.lang, "
     "(SELECT COUNT(*) FROM manager_sessions s WHERE s.question_id = q.id) AS nb_sessions "
     "FROM manager_questions q "
 )
@@ -39,31 +41,38 @@ def _to_question(row: sqlite3.Row) -> QuestionOut:
         contraintes=json.loads(row["contraintes_json"]),
         enjeu=row["enjeu"],
         enonce=row["enonce"],
+        lang=row["lang"],
         nb_sessions=row["nb_sessions"],
     )
 
 
-def _filters(categorie: Categorie | None, difficulte: Difficulte | None) -> tuple[str, list[str]]:
-    """Construit la clause WHERE d'un filtre catégorie / difficulté."""
-    clauses: list[str] = []
-    params: list[str] = []
+def _filters(
+    categorie: Categorie | None, difficulte: Difficulte | None, lang: Lang
+) -> tuple[str, list[str]]:
+    """Construit la clause WHERE d'un filtre langue (toujours), catégorie et difficulté."""
+    clauses: list[str] = ["q.lang = ?"]
+    params: list[str] = [lang]
     if categorie is not None:
         clauses.append("q.categorie = ?")
         params.append(categorie)
     if difficulte is not None:
         clauses.append("q.difficulte = ?")
         params.append(difficulte)
-    return (f"WHERE {' AND '.join(clauses)} " if clauses else ""), params
+    return f"WHERE {' AND '.join(clauses)} ", params
 
 
 def insert_question(
-    conn: sqlite3.Connection, generated: GeneratedQuestion, categorie: Categorie, level: Difficulte
+    conn: sqlite3.Connection,
+    generated: GeneratedQuestion,
+    categorie: Categorie,
+    level: Difficulte,
+    lang: Lang,
 ) -> QuestionOut:
     """Enregistre une question générée dans la banque."""
     cursor = conn.execute(
         "INSERT INTO manager_questions "
-        "(categorie, difficulte, contexte, contraintes_json, enjeu, enonce, created_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "(categorie, difficulte, contexte, contraintes_json, enjeu, enonce, created_at, lang) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         (
             categorie,
             level,
@@ -72,6 +81,7 @@ def insert_question(
             generated.enjeu,
             generated.enonce,
             _now(),
+            lang,
         ),
     )
     conn.commit()
@@ -88,30 +98,33 @@ def get_question(conn: sqlite3.Connection, question_id: int) -> QuestionOut | No
 
 
 def list_questions(
-    conn: sqlite3.Connection, categorie: Categorie | None, difficulte: Difficulte | None
+    conn: sqlite3.Connection, categorie: Categorie | None, difficulte: Difficulte | None, lang: Lang
 ) -> list[QuestionOut]:
-    """Liste la banque, filtrable, de la plus récente à la plus ancienne."""
-    where, params = _filters(categorie, difficulte)
+    """Liste la banque d'une langue, filtrable, de la plus récente à la plus ancienne."""
+    where, params = _filters(categorie, difficulte, lang)
     rows = conn.execute(QUESTION_SELECT + where + "ORDER BY q.id DESC", params).fetchall()
     return [_to_question(row) for row in rows]
 
 
 def draw_question(
-    conn: sqlite3.Connection, categorie: Categorie | None, difficulte: Difficulte | None
+    conn: sqlite3.Connection, categorie: Categorie | None, difficulte: Difficulte | None, lang: Lang
 ) -> QuestionOut | None:
-    """Tire une question de la banque en favorisant les moins travaillées."""
-    where, params = _filters(categorie, difficulte)
+    """Tire une question de la banque (dans la langue) en favorisant les moins travaillées."""
+    where, params = _filters(categorie, difficulte, lang)
     row = conn.execute(
         QUESTION_SELECT + where + "ORDER BY nb_sessions ASC, RANDOM() LIMIT 1", params
     ).fetchone()
     return _to_question(row) if row else None
 
 
-def recent_enonces(conn: sqlite3.Connection, categorie: Categorie, limit: int) -> list[str]:
-    """Derniers énoncés d'une catégorie, pour éviter les doublons à la génération."""
+def recent_enonces(
+    conn: sqlite3.Connection, categorie: Categorie, lang: Lang, limit: int
+) -> list[str]:
+    """Derniers énoncés d'une catégorie et d'une langue, pour éviter les doublons."""
     rows = conn.execute(
-        "SELECT enonce FROM manager_questions WHERE categorie = ? ORDER BY id DESC LIMIT ?",
-        (categorie, limit),
+        "SELECT enonce FROM manager_questions WHERE categorie = ? AND lang = ? "
+        "ORDER BY id DESC LIMIT ?",
+        (categorie, lang, limit),
     ).fetchall()
     return [row["enonce"] for row in rows]
 

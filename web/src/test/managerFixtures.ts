@@ -8,6 +8,7 @@ export const QUESTION: Question = {
   contraintes: ["Deux semaines", "GPU limités"],
   enjeu: "Une démo devant la direction.",
   enonce: "Lances-tu le modèle malgré une évaluation incertaine ?",
+  lang: "fr",
   nb_sessions: 0,
 };
 

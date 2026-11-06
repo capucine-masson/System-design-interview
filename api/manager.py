@@ -6,6 +6,7 @@ from fastapi import HTTPException
 
 from api import manager_db
 from api.config import Settings
+from api.lang import Lang, msg
 from api.llm import (
     LLMClient,
     complete_json,
@@ -38,28 +39,32 @@ HTTP_CONFLICT = 409
 
 
 def generate_question(
-    conn: sqlite3.Connection, settings: Settings, client: LLMClient, request: GenerateIn
+    conn: sqlite3.Connection,
+    settings: Settings,
+    client: LLMClient,
+    request: GenerateIn,
+    lang: Lang,
 ) -> QuestionOut:
-    """Génère un scénario (1 appel IA) et le range dans la banque."""
-    previous = manager_db.recent_enonces(conn, request.categorie, PREVIOUS_ENONCES)
+    """Génère un scénario (1 appel IA) dans la langue demandée et le range dans la banque."""
+    previous = manager_db.recent_enonces(conn, request.categorie, lang, PREVIOUS_ENONCES)
     generated = complete_json(
         conn,
         settings,
         client,
         FEATURE_QUESTION,
-        question_messages(request.categorie, request.difficulte, previous),
+        question_messages(request.categorie, request.difficulte, previous, lang),
         GeneratedQuestion,
         TOKENS_QUESTION,
         TEMPERATURE_QUESTION,
     )
-    return manager_db.insert_question(conn, generated, request.categorie, request.difficulte)
+    return manager_db.insert_question(conn, generated, request.categorie, request.difficulte, lang)
 
 
 def require_session(conn: sqlite3.Connection, session_id: int) -> SessionOut:
     """Retourne la session ou lève un 404 lisible."""
     session = manager_db.get_session(conn, session_id)
     if session is None:
-        raise HTTPException(HTTP_NOT_FOUND, "Session introuvable.")
+        raise HTTPException(HTTP_NOT_FOUND, msg("Session introuvable.", "Session not found."))
     return session
 
 
@@ -69,11 +74,22 @@ def submit_answer(
     """Enregistre une réponse (sans appel IA) tant que la session est ouverte."""
     session = require_session(conn, session_id)
     if session.statut == "terminee":
-        raise HTTPException(HTTP_CONFLICT, "Cette session est terminée.")
+        raise HTTPException(
+            HTTP_CONFLICT, msg("Cette session est terminée.", "This session is finished.")
+        )
     if session.answers_count >= session.max_answers:
-        raise HTTPException(HTTP_CONFLICT, "Nombre maximal d'échanges atteint : demande le retour.")
+        raise HTTPException(
+            HTTP_CONFLICT,
+            msg(
+                "Nombre maximal d'échanges atteint : demande le retour.",
+                "Maximum number of exchanges reached: ask for the feedback.",
+            ),
+        )
     if session.turns and session.turns[-1].kind == "answer":
-        raise HTTPException(HTTP_CONFLICT, "Demande d'abord la relance du manager.")
+        raise HTTPException(
+            HTTP_CONFLICT,
+            msg("Demande d'abord la relance du manager.", "Ask for the manager's follow-up first."),
+        )
     manager_db.add_answer(conn, session_id, transcription, duree_s)
     return require_session(conn, session_id)
 
@@ -84,11 +100,23 @@ def request_relance(
     """Demande la relance du manager après la dernière réponse (1 appel IA, mis en cache)."""
     session = require_session(conn, session_id)
     if session.statut == "terminee" or not session.turns:
-        raise HTTPException(HTTP_CONFLICT, "Aucune relance possible pour cette session.")
+        raise HTTPException(
+            HTTP_CONFLICT,
+            msg(
+                "Aucune relance possible pour cette session.",
+                "No follow-up possible for this session.",
+            ),
+        )
     if session.turns[-1].kind == "relance":
         return session
     if session.answers_count >= session.max_answers:
-        raise HTTPException(HTTP_CONFLICT, "Dernier échange atteint : demande le retour.")
+        raise HTTPException(
+            HTTP_CONFLICT,
+            msg(
+                "Dernier échange atteint : demande le retour.",
+                "Last exchange reached: ask for the feedback.",
+            ),
+        )
     relance = complete_json(
         conn,
         settings,
@@ -114,7 +142,9 @@ def finish_session(
     if session.feedback is not None:
         return session
     if session.answers_count == 0:
-        raise HTTPException(HTTP_CONFLICT, "Réponds d'abord à la question.")
+        raise HTTPException(
+            HTTP_CONFLICT, msg("Réponds d'abord à la question.", "Answer the question first.")
+        )
     feedback = complete_json(
         conn,
         settings,

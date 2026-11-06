@@ -6,6 +6,7 @@ import { type Ref, useCallback, useEffect, useImperativeHandle, useRef, useState
 import { getSceneVersion, listSceneVersions, saveScene } from "../api";
 import { useAppTheme } from "../hooks/useAppTheme";
 import { useAutosave } from "../hooks/useAutosave";
+import { EXCALIDRAW_LOCALES, translate, useI18n } from "../i18n";
 import { buildLibraryItems } from "../sdLibrary";
 import type { SceneElement, SceneVersion, StoredScene } from "../types";
 
@@ -51,10 +52,11 @@ function signatureOf(elements: readonly { id: string; version: number }[], backg
   return `${background}|${elements.map((e) => `${e.id}:${e.version}`).join(",")}`;
 }
 
-const formatTime = (date: Date): string =>
-  date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+const formatTime = (date: Date, locale: string): string =>
+  date.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
 
 export default function SdCanvas({ sessionId, initialScene, readOnly, getElapsed, ref }: SdCanvasProps) {
+  const { lang, t, locale } = useI18n();
   const theme = useAppTheme();
   const apiRef = useRef<ExcalidrawImperativeAPI | null>(null);
   const [initialData] = useState<ExcalidrawInitialDataState>(() => ({
@@ -99,7 +101,7 @@ export default function SdCanvas({ sessionId, initialScene, readOnly, getElapsed
             unsaved.current = snapshot;
             setStatus({
               kind: "error",
-              message: err instanceof Error ? err.message : "Échec de l'enregistrement.",
+              message: err instanceof Error ? err.message : translate("canvas.saveFailed"),
             });
           },
         );
@@ -175,17 +177,17 @@ export default function SdCanvas({ sessionId, initialScene, readOnly, getElapsed
   };
 
   return (
-    <section className="sd-canvas-wrap" aria-label="Schéma d'architecture">
+    <section className="sd-canvas-wrap" aria-label={t("canvas.aria")}>
       <div className="sd-canvas-bar">
         <p className="muted sd-save-status" role="status">
-          {status.kind === "saving" && "Enregistrement…"}
-          {status.kind === "saved" && `Enregistré à ${formatTime(status.at)}`}
-          {status.kind === "idle" && (readOnly ? "Schéma en lecture seule" : "Sauvegarde automatique")}
-          {status.kind === "error" && `Échec de l'enregistrement : ${status.message}`}
+          {status.kind === "saving" && t("canvas.saving")}
+          {status.kind === "saved" && t("canvas.savedAt", { time: formatTime(status.at, locale) })}
+          {status.kind === "idle" && (readOnly ? t("canvas.readOnly") : t("canvas.autosave"))}
+          {status.kind === "error" && t("canvas.saveError", { message: status.message })}
         </p>
         {status.kind === "error" && (
           <button type="button" className="btn" onClick={retry}>
-            Réessayer
+            {t("common.retry")}
           </button>
         )}
         <button
@@ -195,18 +197,21 @@ export default function SdCanvas({ sessionId, initialScene, readOnly, getElapsed
           disabled={readOnly}
           onClick={toggleVersions}
         >
-          Versions
+          {t("canvas.versions")}
         </button>
       </div>
       {versionsOpen && (
-        <div className="card sd-versions" role="region" aria-label="Versions du schéma">
-          {versions === null && <p className="muted">Chargement…</p>}
-          {versions?.length === 0 && <p className="muted">Aucune version enregistrée pour l&apos;instant.</p>}
+        <div className="card sd-versions" role="region" aria-label={t("canvas.versionsAria")}>
+          {versions === null && <p className="muted">{t("common.loading")}</p>}
+          {versions?.length === 0 && <p className="muted">{t("canvas.noVersions")}</p>}
           <ul>
             {versions?.map((v) => (
               <li key={v.version}>
                 <button type="button" className="btn" onClick={() => restore(v.version)}>
-                  Version {v.version} · {new Date(v.created_at).toLocaleString("fr-FR")}
+                  {t("canvas.version", {
+                    n: v.version,
+                    date: new Date(v.created_at).toLocaleString(locale),
+                  })}
                 </button>
               </li>
             ))}
@@ -221,15 +226,13 @@ export default function SdCanvas({ sessionId, initialScene, readOnly, getElapsed
           }}
           onChange={(elements, appState) => handleChange(elements, appState)}
           theme={theme}
-          langCode="fr-FR"
+          langCode={EXCALIDRAW_LOCALES[lang]}
           viewModeEnabled={readOnly}
           UIOptions={{ tools: { image: false } }}
         />
       </div>
       <p className="muted sd-shortcuts">
-        Clique sur le schéma pour utiliser les raccourcis Excalidraw : R rectangle, D losange, O ellipse,
-        A flèche, T texte, Ctrl+D dupliquer, double-clic dans une forme pour écrire. Les cylindres sont dans
-        le panneau Bibliothèque.
+        {t("canvas.shortcuts")}
       </p>
     </section>
   );

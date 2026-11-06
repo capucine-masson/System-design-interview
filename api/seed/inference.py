@@ -4,6 +4,10 @@ from api.course_models import CardContent, ThemeContent
 from api.seed.helpers import flow, graph
 
 SOURCE = "Large Transformer Model Inference Optimization (Lilian Weng, 2023)"
+FAIRNESS = "Sheng et al., 2024, « Fairness in Serving Large Language Models »"
+FAIRNESS_URL = "https://arxiv.org/abs/2401.00588"
+MIXTRAL = "Jiang et al., 2024, « Mixtral of Experts »"
+MIXTRAL_URL = "https://arxiv.org/abs/2401.04088"
 
 THEME = ThemeContent(
     slug="inference",
@@ -223,6 +227,83 @@ THEME = ThemeContent(
                     ("r", "e1", "top-k"),
                     ("r", "e2", "top-k"),
                     ("r", "e3"),
+                    ("e1", "s"),
+                    ("e2", "s"),
+                ],
+            ),
+        ),
+        CardContent(
+            titre="Ordonnancement équitable et quotas en tokens",
+            accroche=(
+                "Sur une API LLM partagée, on limite et on ordonnance en tokens, pas en "
+                "requêtes, pour répartir équitablement la capacité GPU entre des clients "
+                "aux SLA différents."
+            ),
+            points=[
+                "Une requête de 100 000 tokens pèse bien plus que mille petites : on "
+                "limite en tokens par minute (entrée et sortie), en plus des requêtes par minute.",
+                "À l'admission, on réserve la sortie maximale demandée (max_tokens) puis "
+                "on rend le non consommé au seau à jetons du client.",
+                "Paliers de SLA : poids et files prioritaires par palier, capacité "
+                "réservée pour les clients premium, le reste en best-effort, rafales "
+                "autorisées jusqu'à un plafond.",
+                "Équité : éviter qu'un gros client monopolise les GPU (noisy neighbor) "
+                "en servant d'abord celui qui a reçu le moins de tokens (Virtual Token "
+                "Counter), au-dessus du batching continu.",
+                "En surcharge : rejeter vite avec un 429 et un délai de réessai plutôt "
+                "que laisser la file grandir, ou dégrader (modèle plus petit).",
+                "À suivre : p95 par palier, taux de rejet, temps d'attente en file, "
+                "utilisation des GPU.",
+            ],
+            source_label=FAIRNESS,
+            source_url=FAIRNESS_URL,
+            diagram=flow(
+                [
+                    "Requête client",
+                    "Quota en tokens",
+                    "File par palier",
+                    "Ordonnanceur équitable",
+                    "GPU",
+                ]
+            ),
+        ),
+        CardContent(
+            titre="Routage des experts et équilibrage de charge",
+            accroche=(
+                "Dans un MoE servi sur plusieurs GPU, le routeur envoie chaque token vers "
+                "quelques experts : la difficulté est de garder les GPU équilibrés et la "
+                "communication peu coûteuse."
+            ),
+            points=[
+                "Dans Mixtral, chaque couche a 8 experts et le routeur en choisit 2 par "
+                "token, un choix qui peut changer à chaque token et à chaque couche.",
+                "Expert parallelism : les experts sont répartis entre GPU, et chaque "
+                "couche demande un échange all-to-all pour envoyer les tokens à leurs "
+                "experts puis les récupérer.",
+                "Déséquilibre : si un expert est très sollicité, son GPU devient le "
+                "retardataire et fixe le temps de l'étape pour tous (donc le p95).",
+                "À l'entraînement, une perte auxiliaire d'équilibrage répartit les "
+                "tokens ; à l'inférence, on surveille la charge par expert et on peut "
+                "répliquer les experts chauds.",
+                "Mémoire : tous les experts doivent tenir en mémoire GPU, même si peu "
+                "sont actifs ; avec de gros batchs, presque tous sont lus à chaque étape.",
+                "Budget à chiffrer : poids (~47 milliards de paramètres pour Mixtral) + "
+                "KV cache + activations, contre la mémoire disponible par GPU.",
+            ],
+            source_label=MIXTRAL,
+            source_url=MIXTRAL_URL,
+            diagram=graph(
+                [
+                    ("t", "Token", 0, 1),
+                    ("r", "Routeur (top-k)", 1, 1),
+                    ("e1", "Experts sur GPU 1", 2, 0),
+                    ("e2", "Experts sur GPU 2", 2, 2),
+                    ("s", "Somme pondérée", 3, 1),
+                ],
+                [
+                    ("t", "r"),
+                    ("r", "e1", "all-to-all"),
+                    ("r", "e2", "all-to-all"),
                     ("e1", "s"),
                     ("e2", "s"),
                 ],

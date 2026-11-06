@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 
 from pydantic import JsonValue
 
+from api.lang import Lang
 from api.sd_correction_models import ReferenceSolution, SdCorrection
 from api.sd_models import (
     CaseOut,
@@ -23,7 +24,7 @@ from api.sd_models import (
 MAX_SCENE_VERSIONS = 100
 
 CASE_SELECT = (
-    "SELECT c.id, c.type, c.titre, c.brief, "
+    "SELECT c.id, c.type, c.titre, c.brief, c.lang, "
     "(SELECT COUNT(*) FROM sd_sessions s WHERE s.case_id = c.id) AS nb_sessions "
     "FROM sd_cases c "
 )
@@ -54,6 +55,7 @@ def _to_case(row: sqlite3.Row) -> CaseOut:
         type=row["type"],
         titre=row["titre"],
         brief=row["brief"],
+        lang=row["lang"],
         nb_sessions=row["nb_sessions"],
     )
 
@@ -61,12 +63,15 @@ def _to_case(row: sqlite3.Row) -> CaseOut:
 # --- Cas ---
 
 
-def insert_case(conn: sqlite3.Connection, type_slug: str, generated: GeneratedCase) -> CaseOut:
+def insert_case(
+    conn: sqlite3.Connection, type_slug: str, generated: GeneratedCase, lang: Lang
+) -> CaseOut:
     """Range un cas généré dans la banque ; les détails cachés restent en base."""
     hidden = HiddenContext(details=generated.details, pistes_zoom=generated.pistes_zoom)
     cursor = conn.execute(
-        "INSERT INTO sd_cases (type, titre, brief, params_json, created_at) VALUES (?, ?, ?, ?, ?)",
-        (type_slug, generated.titre, generated.brief, hidden.model_dump_json(), _now()),
+        "INSERT INTO sd_cases (type, titre, brief, params_json, created_at, lang) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (type_slug, generated.titre, generated.brief, hidden.model_dump_json(), _now(), lang),
     )
     conn.commit()
     case = get_case(conn, int(cursor.lastrowid or 0))
@@ -87,16 +92,23 @@ def get_hidden(conn: sqlite3.Connection, case_id: int) -> HiddenContext:
     return HiddenContext.model_validate_json(row["params_json"])
 
 
-def list_cases(conn: sqlite3.Connection, type_slug: str | None) -> list[CaseOut]:
-    """Liste la banque de cas, du plus récent au plus ancien."""
-    where, params = ("WHERE c.type = ? ", [type_slug]) if type_slug else ("", [])
+def _case_filter(type_slug: str | None, lang: Lang) -> tuple[str, list[str]]:
+    """Clause WHERE d'un filtre langue (toujours) et type (facultatif)."""
+    if type_slug:
+        return "WHERE c.lang = ? AND c.type = ? ", [lang, type_slug]
+    return "WHERE c.lang = ? ", [lang]
+
+
+def list_cases(conn: sqlite3.Connection, type_slug: str | None, lang: Lang) -> list[CaseOut]:
+    """Liste la banque de cas d'une langue, du plus récent au plus ancien."""
+    where, params = _case_filter(type_slug, lang)
     rows = conn.execute(CASE_SELECT + where + "ORDER BY c.id DESC", params).fetchall()
     return [_to_case(row) for row in rows]
 
 
-def draw_case(conn: sqlite3.Connection, type_slug: str | None) -> CaseOut | None:
-    """Tire un cas de la banque en favorisant les moins joués."""
-    where, params = ("WHERE c.type = ? ", [type_slug]) if type_slug else ("", [])
+def draw_case(conn: sqlite3.Connection, type_slug: str | None, lang: Lang) -> CaseOut | None:
+    """Tire un cas de la banque (dans la langue) en favorisant les moins joués."""
+    where, params = _case_filter(type_slug, lang)
     row = conn.execute(
         CASE_SELECT + where + "ORDER BY nb_sessions ASC, RANDOM() LIMIT 1", params
     ).fetchone()

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useSpeechRecognition } from "../hooks/useSpeechRecognition";
+import { useI18n } from "../i18n";
 import type { SdSession } from "../types";
 
 const MAX_MESSAGE_CHARS = 2000;
@@ -14,6 +15,7 @@ interface SdChatProps {
 }
 
 export default function SdChat({ session, busy, error, onSend, onRetryReply }: SdChatProps) {
+  const { t } = useI18n();
   const [text, setText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const speech = useSpeechRecognition((finalText) =>
@@ -33,17 +35,17 @@ export default function SdChat({ session, busy, error, onSend, onRetryReply }: S
   };
 
   return (
-    <section className="card sd-chat" aria-label="Discussion avec l'interviewer">
+    <section className="card sd-chat" aria-label={t("chat.aria")}>
       <ol className="sd-messages" aria-live="polite">
         {session.messages.map((message) => (
           <li key={message.id} className={`msg msg-${message.role}`}>
-            <p className="msg-author muted">{message.role === "user" ? "Toi" : "Interviewer"}</p>
+            <p className="msg-author muted">{message.role === "user" ? t("common.you") : t("chat.interviewer")}</p>
             <p className="msg-text">{message.content}</p>
           </li>
         ))}
         {busy && (
           <li className="msg msg-assistant muted" role="status">
-            L&apos;interviewer réfléchit…
+            {t("chat.thinking")}
           </li>
         )}
         <div ref={bottomRef} />
@@ -51,23 +53,23 @@ export default function SdChat({ session, busy, error, onSend, onRetryReply }: S
       {error && <div className="notice notice-error">{error}</div>}
       {session.awaiting_reply && !busy && !finished && (
         <button type="button" className="btn" onClick={onRetryReply}>
-          Redemander la réponse de l&apos;interviewer
+          {t("chat.retry")}
         </button>
       )}
-      {finished && <p className="muted">Session terminée : la discussion est fermée.</p>}
+      {finished && <p className="muted">{t("chat.closed")}</p>}
       {limitReached && !finished && (
-        <p className="muted">Nombre maximal de messages atteint pour cette session.</p>
+        <p className="muted">{t("chat.limit")}</p>
       )}
       {!speech.supported && canWrite && (
-        <p className="notice">Dictée indisponible dans ce navigateur (utilise Chrome ou Edge) : tape ton message.</p>
+        <p className="notice">{t("chat.noDictation")}</p>
       )}
       {speech.error && <p className="notice notice-error">{speech.error}</p>}
       <textarea
-        aria-label="Ton message"
+        aria-label={t("chat.messageLabel")}
         className="sd-input"
         rows={3}
         maxLength={MAX_MESSAGE_CHARS}
-        placeholder="Pose une question de clarification, énonce une hypothèse…"
+        placeholder={t("chat.placeholder")}
         value={text}
         disabled={!canWrite || busy}
         onChange={(event) => setText(event.target.value)}
@@ -88,7 +90,7 @@ export default function SdChat({ session, busy, error, onSend, onRetryReply }: S
             disabled={!canWrite || busy}
             onClick={speech.listening ? speech.stop : speech.start}
           >
-            {speech.listening ? "Arrêter la dictée" : "Dicter"}
+            {speech.listening ? t("composer.stopDictation") : t("chat.dictate")}
           </button>
         ) : (
           <span />
@@ -99,7 +101,7 @@ export default function SdChat({ session, busy, error, onSend, onRetryReply }: S
           disabled={!canWrite || busy || text.trim().length === 0}
           onClick={() => void submit()}
         >
-          Envoyer
+          {t("chat.send")}
         </button>
       </div>
     </section>

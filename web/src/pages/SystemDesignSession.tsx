@@ -16,12 +16,13 @@ import SdCorrectionView from "../components/SdCorrectionView";
 import SdFinish from "../components/SdFinish";
 import SdTimer from "../components/SdTimer";
 import { useElapsed } from "../hooks/useElapsed";
+import { translate, useI18n } from "../i18n";
 import type { CorrectionBundle, SdSession, StoredScene } from "../types";
 
 const ELAPSED_SYNC_MS = 30_000;
 
 const errorMessage = (err: unknown): string =>
-  err instanceof Error ? err.message : "Une erreur est survenue.";
+  err instanceof Error ? err.message : translate("common.unknownError");
 
 interface Loaded {
   session: SdSession;
@@ -29,6 +30,7 @@ interface Loaded {
 }
 
 export default function SystemDesignSession() {
+  const { t } = useI18n();
   const sessionId = Number(useParams().id);
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -42,8 +44,12 @@ export default function SystemDesignSession() {
   if (!loaded) {
     return (
       <section>
-        <h1>System Design</h1>
-        {error ? <div className="notice notice-error">{error}</div> : <p className="muted">Chargement…</p>}
+        <h1>{t("sd.title")}</h1>
+        {error ? (
+          <div className="notice notice-error">{error}</div>
+        ) : (
+          <p className="muted">{t("common.loading")}</p>
+        )}
       </section>
     );
   }
@@ -51,6 +57,7 @@ export default function SystemDesignSession() {
 }
 
 function Workspace({ initial, sessionId }: { initial: Loaded; sessionId: number }) {
+  const { t } = useI18n();
   const [session, setSession] = useState(initial.session);
   const [busy, setBusy] = useState<"message" | "reply" | "finish" | "correction" | null>(null);
   const [bundle, setBundle] = useState<CorrectionBundle | null>(null);
@@ -137,7 +144,7 @@ function Workspace({ initial, sessionId }: { initial: Loaded; sessionId: number 
     <section>
       <p>
         <Link to="/system-design" className="muted">
-          ← System Design
+          {t("sd.back")}
         </Link>
       </p>
       <div className="page-head">
@@ -163,15 +170,15 @@ function Workspace({ initial, sessionId }: { initial: Loaded; sessionId: number 
       </div>
       {busy === "correction" && (
         <p className="muted" role="status">
-          Le manager prépare la correction… (jusqu&apos;à une minute la première fois)
+          {t("sd.correctionWait")}
         </p>
       )}
       {finished && !bundle && busy !== "correction" && (
         <div className="card">
-          <p>La correction détaillée et la solution de référence sont prêtes à être générées.</p>
+          <p>{t("sd.correctionReady")}</p>
           {error && <div className="notice notice-error">{error}</div>}
           <button type="button" className="btn btn-primary" onClick={() => void askCorrection()}>
-            Obtenir la correction détaillée
+            {t("sd.getCorrection")}
           </button>
         </div>
       )}

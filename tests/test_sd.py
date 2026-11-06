@@ -62,11 +62,15 @@ def chat(
 # --- Catalogue ---
 
 
-ML_SLUGS = {"rag", "inference", "entrainement", "evaluation", "agent", "recommandation"}
+ML_SLUGS = {
+    "rag", "inference", "entrainement", "evaluation", "agent", "recommandation",
+    "moe-serving", "api-multi-tenant", "lora-multi-adaptateurs",
+}  # fmt: skip
 CLASSIC_SLUGS = {
     "google-docs", "streaming-video", "url-shortener", "messagerie", "fil-actualite", "vtc",
     "stockage-fichiers", "rate-limiter", "notifications", "autocompletion", "crawler",
-    "paiement", "billetterie", "kv-store",
+    "paiement", "billetterie", "kv-store", "sessions-utilisateur", "permissions",
+    "commandes-en-ligne", "bibliotheque", "blog",
 }  # fmt: skip
 
 
@@ -128,7 +132,7 @@ def test_generate_logs_one_call_and_hides_details(
     assert llm_calls(conn) == ["sd_brief"]
     assert fake_llm.response_models == [GeneratedCase]
     assert case["brief"] == CASE["brief"]
-    assert set(case) == {"id", "type", "titre", "brief", "nb_sessions"}
+    assert set(case) == {"id", "type", "titre", "brief", "lang", "nb_sessions"}
     stored = conn.execute("SELECT params_json FROM sd_cases").fetchone()["params_json"]
     assert SECRET in stored
     assert SECRET not in str(client.get("/api/sd/cases").json())

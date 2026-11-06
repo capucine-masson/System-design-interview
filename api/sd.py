@@ -8,6 +8,7 @@ from fastapi import HTTPException
 
 from api import sd_db
 from api.config import Settings
+from api.lang import Lang, msg
 from api.llm import (
     LLMClient,
     case_messages,
@@ -43,7 +44,10 @@ SUMMARY_BATCH = 6
 MAX_USER_MESSAGES = 40
 PREVIOUS_TITLES = 6
 MAX_SCENE_BYTES = 2_000_000
-OPENING_SUFFIX = "\n\nPose-moi les questions que tu veux pour cadrer le problème."
+OPENING_SUFFIXES: dict[Lang, str] = {
+    "fr": "\n\nPose-moi les questions que tu veux pour cadrer le problème.",
+    "en": "\n\nAsk me whatever questions you like to frame the problem.",
+}
 
 HTTP_NOT_FOUND = 404
 HTTP_CONFLICT = 409
@@ -51,32 +55,33 @@ HTTP_TOO_LARGE = 413
 
 
 def generate_case(
-    conn: sqlite3.Connection, settings: Settings, client: LLMClient, type_slug: str
+    conn: sqlite3.Connection, settings: Settings, client: LLMClient, type_slug: str, lang: Lang
 ) -> CaseOut:
     """Génère un brief (1 appel IA) et le range dans la banque, détails cachés compris."""
     case_type = get_case_type(type_slug)
     if case_type is None:
-        raise HTTPException(HTTP_NOT_FOUND, "Type de cas inconnu.")
-    titles = [c.titre for c in sd_db.list_cases(conn, type_slug)[:PREVIOUS_TITLES]]
+        raise HTTPException(HTTP_NOT_FOUND, msg("Type de cas inconnu.", "Unknown case type."))
+    titles = [c.titre for c in sd_db.list_cases(conn, type_slug, lang)[:PREVIOUS_TITLES]]
     generated = complete_json(
         conn,
         settings,
         client,
         FEATURE_CASE,
-        case_messages(case_type, titles),
+        case_messages(case_type.localized(lang), titles, lang),
         GeneratedCase,
         TOKENS_CASE,
         TEMPERATURE_CASE,
     )
-    return sd_db.insert_case(conn, type_slug, generated)
+    return sd_db.insert_case(conn, type_slug, generated, lang)
 
 
 def start_session(conn: sqlite3.Connection, case_id: int) -> SdSessionOut:
     """Crée une session ; l'énoncé du cas est le premier message de l'interviewer (sans IA)."""
     case = sd_db.get_case(conn, case_id)
     if case is None:
-        raise HTTPException(HTTP_NOT_FOUND, "Cas introuvable.")
-    return require_session(conn, sd_db.create_session(conn, case_id, case.brief + OPENING_SUFFIX))
+        raise HTTPException(HTTP_NOT_FOUND, msg("Cas introuvable.", "Case not found."))
+    opening = case.brief + OPENING_SUFFIXES[case.lang]
+    return require_session(conn, sd_db.create_session(conn, case_id, opening))
 
 
 def require_session(conn: sqlite3.Connection, session_id: int) -> SdSessionOut:
@@ -84,7 +89,7 @@ def require_session(conn: sqlite3.Connection, session_id: int) -> SdSessionOut:
     row = sd_db.get_session_row(conn, session_id)
     case = sd_db.get_case(conn, row.case_id) if row else None
     if row is None or case is None:
-        raise HTTPException(HTTP_NOT_FOUND, "Session introuvable.")
+        raise HTTPException(HTTP_NOT_FOUND, msg("Session introuvable.", "Session not found."))
     messages = sd_db.list_messages(conn, session_id)
     return SdSessionOut(
         id=row.id,
@@ -101,7 +106,9 @@ def require_session(conn: sqlite3.Connection, session_id: int) -> SdSessionOut:
 
 def _require_open(session: SdSessionOut) -> None:
     if session.statut == "terminee":
-        raise HTTPException(HTTP_CONFLICT, "Cette session est terminée.")
+        raise HTTPException(
+            HTTP_CONFLICT, msg("Cette session est terminée.", "This session is finished.")
+        )
 
 
 def post_message(
@@ -111,9 +118,18 @@ def post_message(
     session = require_session(conn, session_id)
     _require_open(session)
     if session.awaiting_reply:
-        raise HTTPException(HTTP_CONFLICT, "Attends la réponse de l'interviewer.")
+        raise HTTPException(
+            HTTP_CONFLICT,
+            msg("Attends la réponse de l'interviewer.", "Wait for the interviewer's reply."),
+        )
     if session.user_messages >= MAX_USER_MESSAGES:
-        raise HTTPException(HTTP_CONFLICT, "Nombre maximal de messages atteint pour cette session.")
+        raise HTTPException(
+            HTTP_CONFLICT,
+            msg(
+                "Nombre maximal de messages atteint pour cette session.",
+                "Maximum number of messages reached for this session.",
+            ),
+        )
     sd_db.add_message(conn, session_id, "user", content)
     sd_db.set_elapsed(conn, session_id, elapsed_s)
     return require_session(conn, session_id)
@@ -129,7 +145,7 @@ def request_reply(
         return session
     row = sd_db.get_session_row(conn, session_id)
     if row is None:
-        raise HTTPException(HTTP_NOT_FOUND, "Session introuvable.")
+        raise HTTPException(HTTP_NOT_FOUND, msg("Session introuvable.", "Session not found."))
     unsummarized = [m for m in session.messages if m.id > row.summary_upto]
     recent = unsummarized[-RECENT_WINDOW:]
     while recent and recent[0].role == "assistant":
@@ -145,19 +161,26 @@ def request_reply(
             row.summary,
             row.elapsed_s,
             recent,
+            session.case.lang,
         ),
         TOKENS_REPLY,
         TEMPERATURE_REPLY,
     ).strip()
     if not reply:
-        raise HTTPException(502, "L'interviewer n'a pas répondu. Réessaie.")
+        raise HTTPException(
+            502,
+            msg(
+                "L'interviewer n'a pas répondu. Réessaie.",
+                "The interviewer did not answer. Try again.",
+            ),
+        )
     sd_db.add_message(conn, session_id, "assistant", reply)
-    _maybe_summarize(conn, settings, client, session_id)
+    _maybe_summarize(conn, settings, client, session_id, session.case.lang)
     return require_session(conn, session_id)
 
 
 def _maybe_summarize(
-    conn: sqlite3.Connection, settings: Settings, client: LLMClient, session_id: int
+    conn: sqlite3.Connection, settings: Settings, client: LLMClient, session_id: int, lang: Lang
 ) -> None:
     """Condense les plus anciens messages dans le résumé glissant quand il y en a trop."""
     row = sd_db.get_session_row(conn, session_id)
@@ -173,7 +196,7 @@ def _maybe_summarize(
             settings,
             client,
             FEATURE_SUMMARY,
-            summary_messages(row.summary, batch),
+            summary_messages(row.summary, batch, lang),
             TOKENS_SUMMARY,
             TEMPERATURE_SUMMARY,
         ).strip()
@@ -189,7 +212,13 @@ def save_scene(conn: sqlite3.Connection, session_id: int, scene: SceneIn) -> Sce
     _require_open(require_session(conn, session_id))
     size = len(json.dumps(scene.elements)) + len(json.dumps(scene.app_state))
     if size > MAX_SCENE_BYTES:
-        raise HTTPException(HTTP_TOO_LARGE, "Le schéma est trop volumineux pour être enregistré.")
+        raise HTTPException(
+            HTTP_TOO_LARGE,
+            msg(
+                "Le schéma est trop volumineux pour être enregistré.",
+                "The diagram is too large to be saved.",
+            ),
+        )
     version = sd_db.save_scene(conn, session_id, scene.elements, scene.app_state)
     sd_db.set_elapsed(conn, session_id, scene.elapsed_s)
     return version

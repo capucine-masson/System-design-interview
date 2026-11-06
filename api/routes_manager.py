@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from api import manager, manager_db
 from api.config import Settings
-from api.deps import get_conn, get_llm_client, get_settings
+from api.deps import get_conn, get_llm_client, get_request_lang, get_settings
+from api.lang import Lang, msg
 from api.llm import LLMClient
 from api.manager_models import (
     AnswerIn,
@@ -28,9 +29,10 @@ def generate_question(
     conn: sqlite3.Connection = Depends(get_conn),
     settings: Settings = Depends(get_settings),
     client: LLMClient = Depends(get_llm_client),
+    lang: Lang = Depends(get_request_lang),
 ) -> QuestionOut:
     """Génère une question avec l'IA (action explicite) et l'ajoute à la banque."""
-    return manager.generate_question(conn, settings, client, body)
+    return manager.generate_question(conn, settings, client, body, lang)
 
 
 @router.get("/questions")
@@ -38,9 +40,10 @@ def questions(
     categorie: Categorie | None = None,
     difficulte: Difficulte | None = None,
     conn: sqlite3.Connection = Depends(get_conn),
+    lang: Lang = Depends(get_request_lang),
 ) -> list[QuestionOut]:
-    """Liste la banque de questions déjà générées."""
-    return manager_db.list_questions(conn, categorie, difficulte)
+    """Liste la banque de questions déjà générées, dans la langue demandée."""
+    return manager_db.list_questions(conn, categorie, difficulte, lang)
 
 
 @router.get("/questions/draw")
@@ -48,11 +51,18 @@ def draw_question(
     categorie: Categorie | None = None,
     difficulte: Difficulte | None = None,
     conn: sqlite3.Connection = Depends(get_conn),
+    lang: Lang = Depends(get_request_lang),
 ) -> QuestionOut:
-    """Tire une question de la banque, sans appel IA."""
-    question = manager_db.draw_question(conn, categorie, difficulte)
+    """Tire une question de la banque (dans la langue demandée), sans appel IA."""
+    question = manager_db.draw_question(conn, categorie, difficulte, lang)
     if question is None:
-        raise HTTPException(manager.HTTP_NOT_FOUND, "Aucune question en banque pour ce filtre.")
+        raise HTTPException(
+            manager.HTTP_NOT_FOUND,
+            msg(
+                "Aucune question en banque pour ce filtre.",
+                "No question in the bank for this filter.",
+            ),
+        )
     return question
 
 
@@ -60,7 +70,9 @@ def draw_question(
 def create_session(body: SessionCreate, conn: sqlite3.Connection = Depends(get_conn)) -> SessionOut:
     """Démarre une session sur une question de la banque."""
     if manager_db.get_question(conn, body.question_id) is None:
-        raise HTTPException(manager.HTTP_NOT_FOUND, "Question introuvable.")
+        raise HTTPException(
+            manager.HTTP_NOT_FOUND, msg("Question introuvable.", "Question not found.")
+        )
     return manager.require_session(conn, manager_db.create_session(conn, body.question_id))
 
 

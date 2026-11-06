@@ -2,14 +2,15 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createSdSession, drawCase, generateCase, listCaseTypes } from "../api";
 import SdSessionList from "../components/SdSessionList";
+import { type TKey, useI18n } from "../i18n";
 import type { CaseFamily, CaseType, SdCase } from "../types";
 
 type Action = "generate" | "draw";
 const RANDOM = "random";
 
-const FAMILIES: { value: CaseFamily; label: string }[] = [
-  { value: "ml", label: "Systèmes ML / LLM" },
-  { value: "classique", label: "Cas classiques d'entretien" },
+const FAMILIES: { value: CaseFamily; label: TKey }[] = [
+  { value: "ml", label: "sd.familyMl" },
+  { value: "classique", label: "sd.familyClassic" },
 ];
 
 interface CaseOptionProps {
@@ -38,6 +39,7 @@ function CaseOption({ value, title, description, selected, disabled, onSelect }:
 }
 
 export default function SystemDesign() {
+  const { lang, t } = useI18n();
   const navigate = useNavigate();
   const [types, setTypes] = useState<CaseType[] | null>(null);
   const [selected, setSelected] = useState<string>(RANDOM);
@@ -48,7 +50,7 @@ export default function SystemDesign() {
     listCaseTypes()
       .then(setTypes)
       .catch((err: Error) => setError(err.message));
-  }, []);
+  }, [lang]);
 
   const start = async (action: Action): Promise<void> => {
     if (!types) return;
@@ -64,7 +66,7 @@ export default function SystemDesign() {
       const session = await createSdSession(found.id);
       navigate(`/system-design/sessions/${session.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Échec du démarrage de la session.");
+      setError(err instanceof Error ? err.message : t("sd.startFailed"));
       setBusy(null);
     }
   };
@@ -72,22 +74,18 @@ export default function SystemDesign() {
   const disabled = busy !== null || types === null;
   return (
     <section>
-      <h1>System Design</h1>
+      <h1>{t("sd.title")}</h1>
       <div className="card setup">
-        <p className="muted">
-          Choisis un cas (ou laisse le hasard décider). Tu reçois un énoncé volontairement flou : à
-          toi de poser les bonnes questions à l&apos;interviewer, puis de dessiner. L&apos;IA n&apos;est
-          appelée que lorsque tu cliques sur « Générer » ou que tu envoies un message.
-        </p>
-        {!types && !error && <p className="muted">Chargement des cas…</p>}
+        <p className="muted">{t("sd.intro")}</p>
+        {!types && !error && <p className="muted">{t("sd.loadingCases")}</p>}
         {types && (
           <div className="case-groups">
             <fieldset className="case-types">
-              <legend>Hasard</legend>
+              <legend>{t("sd.randomLegend")}</legend>
               <CaseOption
                 value={RANDOM}
-                title="Au hasard"
-                description="Un cas tiré parmi tous les types."
+                title={t("sd.randomTitle")}
+                description={t("sd.randomDesc")}
                 selected={selected}
                 disabled={disabled}
                 onSelect={setSelected}
@@ -95,7 +93,7 @@ export default function SystemDesign() {
             </fieldset>
             {FAMILIES.map((family) => (
               <fieldset key={family.value} className="case-types">
-                <legend>{family.label}</legend>
+                <legend>{t(family.label)}</legend>
                 {types
                   .filter((type) => type.famille === family.value)
                   .map((type) => (
@@ -120,17 +118,17 @@ export default function SystemDesign() {
             disabled={disabled}
             onClick={() => void start("generate")}
           >
-            {busy === "generate" ? "Génération du brief…" : "Générer un brief"}
+            {busy === "generate" ? t("sd.generating") : t("sd.generate")}
           </button>
           <button type="button" className="btn" disabled={disabled} onClick={() => void start("draw")}>
-            {busy === "draw" ? "Tirage…" : "Tirer de la banque (sans IA)"}
+            {busy === "draw" ? t("common.drawing") : t("common.draw")}
           </button>
         </div>
         {error && <div className="notice notice-error">{error}</div>}
       </div>
       <SdSessionList
-        title="Reprendre une session"
-        emptyHint="Tes sessions de System Design apparaîtront ici."
+        title={t("sd.resume")}
+        emptyHint={t("sd.resumeEmpty")}
       />
     </section>
   );

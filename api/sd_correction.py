@@ -7,6 +7,7 @@ from fastapi import HTTPException
 from api import sd_db
 from api.config import Settings
 from api.course_models import Diagram, DiagramEdge, DiagramNode
+from api.lang import msg
 from api.llm import LLMClient, complete_json, correction_messages, reference_messages
 from api.scene_text import describe_scene, render_text
 from api.sd import HTTP_CONFLICT, HTTP_NOT_FOUND, require_session
@@ -53,6 +54,7 @@ def to_diagram(schema: RefDiagram) -> Diagram | None:
     if len(nodes) < 2:
         return None
     ids = {n.id for n in nodes}
+    columns = {n.id: n.col for n in nodes}
     edges = [
         DiagramEdge(
             source=link.source.strip(),
@@ -60,7 +62,9 @@ def to_diagram(schema: RefDiagram) -> Diagram | None:
             label=link.label.strip()[:MAX_EDGE_LABEL] or None,
         )
         for link in schema.liens
-        if link.source.strip() in ids and link.cible.strip() in ids
+        if link.source.strip() in ids
+        and link.cible.strip() in ids
+        and columns[link.cible.strip()] >= columns[link.source.strip()]  # pas d'arc de retour
     ]
     return Diagram(nodes=nodes, edges=edges)
 
@@ -99,7 +103,13 @@ def _require_finished(conn: sqlite3.Connection, session_id: int) -> int:
     """Retourne l'identifiant du cas si la session est terminée (sinon 409)."""
     session = require_session(conn, session_id)
     if session.statut != "terminee":
-        raise HTTPException(HTTP_CONFLICT, "Termine d'abord la session pour voir la correction.")
+        raise HTTPException(
+            HTTP_CONFLICT,
+            msg(
+                "Termine d'abord la session pour voir la correction.",
+                "Finish the session first to see the correction.",
+            ),
+        )
     return session.case.id
 
 
@@ -109,7 +119,13 @@ def get_correction(conn: sqlite3.Connection, session_id: int) -> CorrectionBundl
     correction = sd_db.get_correction(conn, session_id)
     reference = sd_db.get_reference(conn, case_id)
     if correction is None or reference is None:
-        raise HTTPException(HTTP_NOT_FOUND, "Pas encore de correction pour cette session.")
+        raise HTTPException(
+            HTTP_NOT_FOUND,
+            msg(
+                "Pas encore de correction pour cette session.",
+                "No correction for this session yet.",
+            ),
+        )
     return _bundle(conn, case_id, correction, reference)
 
 
@@ -123,13 +139,15 @@ def _ensure_reference(
     case = sd_db.get_case(conn, case_id)
     case_type = get_case_type(case.type) if case else None
     if case is None or case_type is None:
-        raise HTTPException(HTTP_NOT_FOUND, "Cas introuvable.")
+        raise HTTPException(HTTP_NOT_FOUND, msg("Cas introuvable.", "Case not found."))
     reference = complete_json(
         conn,
         settings,
         client,
         FEATURE_REFERENCE,
-        reference_messages(case_type, case.brief, sd_db.get_hidden(conn, case_id)),
+        reference_messages(
+            case_type.localized(case.lang), case.brief, sd_db.get_hidden(conn, case_id), case.lang
+        ),
         ReferenceSolution,
         TOKENS_REFERENCE,
         TEMPERATURE_REFERENCE,
@@ -162,6 +180,7 @@ def request_correction(
             session.messages,
             scene_text,
             session.elapsed_s,
+            session.case.lang,
         ),
         SdCorrection,
         TOKENS_CORRECTION,

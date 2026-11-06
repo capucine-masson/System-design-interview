@@ -2,6 +2,7 @@ import { convertToExcalidrawElements, ROUNDNESS } from "@excalidraw/excalidraw";
 import type { ExcalidrawElementSkeleton } from "@excalidraw/excalidraw/data/transform";
 import type { NonDeletedExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import type { LibraryItem } from "@excalidraw/excalidraw/types";
+import { getLang, type Lang, translate, type TKey } from "./i18n";
 
 /** Formes prêtes à l'emploi du panneau Bibliothèque (le cylindre n'existe pas parmi les outils). */
 
@@ -58,12 +59,15 @@ function queue(): ExcalidrawElementSkeleton[] {
   return [rectangle(0, 0, 140, 40, m), ...dividers, label("Queue", 48, 50, m)];
 }
 
-function externalService(): ExcalidrawElementSkeleton[] {
+function externalService(lang: Lang): ExcalidrawElementSkeleton[] {
   const m = mark("lib-cloud", "cloud");
-  return [{ ...ellipse(0, 0, 150, 80, m), strokeStyle: "dashed" }, label("Service externe", 20, 32, m)];
+  const text = translate("lib.cloud", undefined, lang);
+  return [{ ...ellipse(0, 0, 150, 80, m), strokeStyle: "dashed" }, label(text, 20, 32, m)];
 }
 
-function user(): ExcalidrawElementSkeleton[] {
+const USER_LABEL_X: Record<Lang, number> = { fr: -8, en: 8 };
+
+function user(lang: Lang): ExcalidrawElementSkeleton[] {
   const m = mark("lib-user", "user");
   return [
     ellipse(15, 0, 30, 30, m),
@@ -71,25 +75,25 @@ function user(): ExcalidrawElementSkeleton[] {
     line(8, 45, [[0, 0], [44, 0]], m),
     line(30, 75, [[0, 0], [-20, 30]], m),
     line(30, 75, [[0, 0], [20, 30]], m),
-    label("Utilisateur", -8, 112, m),
+    label(translate("lib.user", undefined, lang), USER_LABEL_X[lang], 112, m),
   ];
 }
 
-const SHAPES: { id: string; name: string; build: () => ExcalidrawElementSkeleton[] }[] = [
-  { id: "lib-database", name: "Base de données (cylindre)", build: database },
-  { id: "lib-queue", name: "File / queue", build: queue },
-  { id: "lib-cloud", name: "Service externe", build: externalService },
-  { id: "lib-user", name: "Utilisateur", build: user },
+const SHAPES: { id: string; name: TKey; build: (lang: Lang) => ExcalidrawElementSkeleton[] }[] = [
+  { id: "lib-database", name: "lib.database", build: database },
+  { id: "lib-queue", name: "lib.queue", build: queue },
+  { id: "lib-cloud", name: "lib.cloud", build: externalService },
+  { id: "lib-user", name: "lib.user", build: user },
 ];
 
-/** Éléments de la bibliothèque préchargée dans Excalidraw. */
-export function buildLibraryItems(): LibraryItem[] {
+/** Éléments de la bibliothèque préchargée dans Excalidraw, dans la langue demandée. */
+export function buildLibraryItems(lang: Lang = getLang()): LibraryItem[] {
   const created = Date.now();
   return SHAPES.map((shape) => ({
     id: shape.id,
-    name: shape.name,
+    name: translate(shape.name, undefined, lang),
     status: "unpublished",
     created,
-    elements: convertToExcalidrawElements(shape.build()) as NonDeletedExcalidrawElement[],
+    elements: convertToExcalidrawElements(shape.build(lang)) as NonDeletedExcalidrawElement[],
   }));
 }

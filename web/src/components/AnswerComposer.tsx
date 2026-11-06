@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSpeechRecognition } from "../hooks/useSpeechRecognition";
+import { useI18n } from "../i18n";
 import { formatDuration, MAX_ANSWER_CHARS, TARGET_MAX_S, TARGET_MIN_S } from "../managerLabels";
 
 interface AnswerComposerProps {
@@ -16,6 +17,7 @@ function timerClass(elapsed: number): string {
 }
 
 export default function AnswerComposer({ busy, onSubmit }: AnswerComposerProps) {
+  const { t } = useI18n();
   const [text, setText] = useState("");
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
@@ -54,7 +56,7 @@ export default function AnswerComposer({ busy, onSubmit }: AnswerComposerProps) 
   };
 
   return (
-    <section className="card composer" aria-label="Ta réponse">
+    <section className="card composer" aria-label={t("composer.aria")}>
       <div className="composer-bar">
         {speech.supported && (
           <button
@@ -64,27 +66,24 @@ export default function AnswerComposer({ busy, onSubmit }: AnswerComposerProps) 
             disabled={busy}
             onClick={toggleMic}
           >
-            {speech.listening ? "Arrêter la dictée" : "Dicter ma réponse"}
+            {speech.listening ? t("composer.stopDictation") : t("composer.dictate")}
           </button>
         )}
-        <span className={timerClass(elapsed)} role="timer" aria-label="Durée de la réponse">
+        <span className={timerClass(elapsed)} role="timer" aria-label={t("composer.timer")}>
           {formatDuration(elapsed)}
         </span>
         <span className="muted">
-          objectif {formatDuration(TARGET_MIN_S)} à {formatDuration(TARGET_MAX_S)}
+          {t("composer.target", { min: formatDuration(TARGET_MIN_S), max: formatDuration(TARGET_MAX_S) })}
         </span>
       </div>
       {!speech.supported && (
-        <p className="notice">
-          La dictée vocale n&apos;est pas disponible dans ce navigateur. Utilise Chrome ou Edge
-          (ordinateur), ou tape ta réponse ci-dessous.
-        </p>
+        <p className="notice">{t("composer.noSpeech")}</p>
       )}
       {speech.error && <p className="notice notice-error">{speech.error}</p>}
       <textarea
         className="composer-text"
-        aria-label="Transcription de ta réponse"
-        placeholder="Dicte ou tape ta réponse. Le texte reste modifiable avant l'envoi."
+        aria-label={t("composer.textLabel")}
+        placeholder={t("composer.placeholder")}
         rows={8}
         maxLength={MAX_ANSWER_CHARS}
         value={text}
@@ -105,7 +104,7 @@ export default function AnswerComposer({ busy, onSubmit }: AnswerComposerProps) 
           disabled={busy || text.trim().length === 0}
           onClick={() => void submit()}
         >
-          Envoyer ma réponse
+          {t("composer.send")}
         </button>
       </div>
     </section>

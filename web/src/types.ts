@@ -1,3 +1,5 @@
+import type { Lang } from "./i18n";
+
 export interface FeatureUsage {
   feature: string;
   calls: number;
@@ -54,6 +56,19 @@ export interface Card {
   essentielle: boolean;
 }
 
+export type RevisionCount = 5 | 10 | "max";
+
+export type Verdict = "correct" | "partiel" | "faux";
+
+export interface CourseReview {
+  verdict: Verdict;
+  points_justes: string[];
+  points_manquants: string[];
+  erreurs: string[];
+  details: string[];
+  explication_simple: string;
+}
+
 export type Categorie =
   | "ambiguite"
   | "decisions"
@@ -71,6 +86,7 @@ export interface Question {
   contraintes: string[];
   enjeu: string;
   enonce: string;
+  lang: Lang;
   nb_sessions: number;
 }
 
@@ -141,6 +157,7 @@ export interface SdCase {
   type: string;
   titre: string;
   brief: string;
+  lang: Lang;
   nb_sessions: number;
 }
 

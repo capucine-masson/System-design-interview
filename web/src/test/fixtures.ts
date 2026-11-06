@@ -1,4 +1,13 @@
-import type { Card, Theme } from "../types";
+import type { Card, CourseReview, Theme } from "../types";
+
+export const REVIEW: CourseReview = {
+  verdict: "partiel",
+  points_justes: ["Tu as parlé du softmax."],
+  points_manquants: ["Les projections Q, K, V."],
+  erreurs: [],
+  details: ["Q, K et V viennent de trois projections apprises."],
+  explication_simple: "Chaque mot regarde les autres et choisit ceux qui comptent.",
+};
 
 export const CARD: Card = {
   id: 1,

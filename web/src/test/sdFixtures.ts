@@ -21,6 +21,7 @@ export const SD_SESSION: SdSession = {
     type: "rag",
     titre: "Assistant documentaire interne",
     brief: "Une équipe veut un assistant sur sa documentation.",
+    lang: "fr",
     nb_sessions: 1,
   },
   messages: [

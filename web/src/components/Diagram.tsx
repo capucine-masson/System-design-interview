@@ -2,7 +2,7 @@ import type { Diagram as DiagramData, DiagramEdge, DiagramNode } from "../types"
 
 const BOX_W = 152;
 const BOX_H = 48;
-const GAP_X = 40;
+const GAP_X = 80;
 const GAP_Y = 28;
 const PAD = 12;
 const WRAP_AT = 18;

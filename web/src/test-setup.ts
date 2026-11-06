@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
+import { setLang } from "./i18n";
 
 // jsdom n'implémente pas matchMedia (utilisé pour suivre le thème clair/sombre).
 Object.defineProperty(window, "matchMedia", {
@@ -14,4 +15,8 @@ Object.defineProperty(window, "matchMedia", {
     }) as unknown as MediaQueryList,
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  setLang("fr");
+  localStorage.clear();
+});

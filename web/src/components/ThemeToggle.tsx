@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useI18n } from "../i18n";
 
 type Theme = "light" | "dark";
 const STORAGE_KEY = "theme";
@@ -13,6 +14,7 @@ function initialTheme(): Theme {
 }
 
 export default function ThemeToggle() {
+  const { t } = useI18n();
   const [theme, setTheme] = useState<Theme>(() => {
     const initial = initialTheme();
     document.documentElement.dataset.theme = initial;
@@ -27,8 +29,8 @@ export default function ThemeToggle() {
   };
 
   return (
-    <button className="btn" onClick={toggle} aria-label="Changer de thème">
-      {theme === "dark" ? "Mode clair" : "Mode sombre"}
+    <button className="btn" onClick={toggle} aria-label={t("app.themeChange")}>
+      {theme === "dark" ? t("app.themeLight") : t("app.themeDark")}
     </button>
   );
 }

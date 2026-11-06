@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getLang, SPEECH_LOCALES, translate, type TKey } from "../i18n";
 
 // Types minimaux de l'API Web Speech (absente des types DOM standard).
 interface RecognitionAlternative {
@@ -24,13 +25,11 @@ interface Recognition {
 }
 type RecognitionConstructor = new () => Recognition;
 
-const LANGUAGE = "fr-FR";
-
-const ERROR_MESSAGES: Record<string, string> = {
-  "not-allowed": "Accès au micro refusé : autorise-le dans le navigateur, ou tape ta réponse.",
-  "service-not-allowed": "Dictée vocale non autorisée par le navigateur : tape ta réponse.",
-  network: "Dictée vocale indisponible (réseau) : vérifie ta connexion, ou tape ta réponse.",
-  "audio-capture": "Aucun micro détecté : branche-en un, ou tape ta réponse.",
+const ERROR_MESSAGES: Record<string, TKey> = {
+  "not-allowed": "speech.notAllowed",
+  "service-not-allowed": "speech.serviceNotAllowed",
+  network: "speech.network",
+  "audio-capture": "speech.audioCapture",
 };
 const IGNORED_ERRORS = new Set(["no-speech", "aborted"]);
 
@@ -51,7 +50,7 @@ interface SpeechState {
   stop: () => void;
 }
 
-/** Dictée vocale gratuite du navigateur (français) ; `onFinalText` reçoit chaque phrase validée. */
+/** Dictée vocale gratuite du navigateur (dans la langue de l'interface) ; `onFinalText` reçoit chaque phrase validée. */
 export function useSpeechRecognition(onFinalText: (text: string) => void): SpeechState {
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState("");
@@ -72,7 +71,7 @@ export function useSpeechRecognition(onFinalText: (text: string) => void): Speec
     const Ctor = getConstructor();
     if (!Ctor) return;
     const recognition = new Ctor();
-    recognition.lang = LANGUAGE;
+    recognition.lang = SPEECH_LOCALES[getLang()];
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.onresult = (event) => {
@@ -87,7 +86,8 @@ export function useSpeechRecognition(onFinalText: (text: string) => void): Speec
     recognition.onerror = (event) => {
       if (IGNORED_ERRORS.has(event.error)) return;
       wantedRef.current = false;
-      setError(ERROR_MESSAGES[event.error] ?? `Erreur de dictée vocale (${event.error}).`);
+      const key = ERROR_MESSAGES[event.error];
+      setError(key ? translate(key) : translate("speech.generic", { code: event.error }));
     };
     recognition.onend = () => {
       // Chrome coupe la dictée après un silence : on relance tant que l'utilisateur la veut.

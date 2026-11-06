@@ -5,20 +5,22 @@ import AnswerComposer from "../components/AnswerComposer";
 import Conversation from "../components/Conversation";
 import FeedbackView from "../components/FeedbackView";
 import ScenarioCard from "../components/ScenarioCard";
+import { translate, type TKey, useI18n } from "../i18n";
 import type { Session } from "../types";
 
 type Busy = "answer" | "relance" | "feedback";
 
-const BUSY_LABELS: Record<Busy, string> = {
-  answer: "Enregistrement de ta réponse…",
-  relance: "Le manager réfléchit à une relance…",
-  feedback: "Le manager prépare ton retour…",
+const BUSY_LABELS: Record<Busy, TKey> = {
+  answer: "manager.busy.answer",
+  relance: "manager.busy.relance",
+  feedback: "manager.busy.feedback",
 };
 
 const errorMessage = (err: unknown): string =>
-  err instanceof Error ? err.message : "Une erreur est survenue.";
+  err instanceof Error ? err.message : translate("common.unknownError");
 
 export default function ManagerSession() {
+  const { t } = useI18n();
   const sessionId = Number(useParams().id);
   const [session, setSession] = useState<Session | null>(null);
   const [busy, setBusy] = useState<Busy | null>(null);
@@ -57,8 +59,12 @@ export default function ManagerSession() {
   if (!session) {
     return (
       <section>
-        <h1>Entretien manager</h1>
-        {error ? <div className="notice notice-error">{error}</div> : <p className="muted">Chargement…</p>}
+        <h1>{t("manager.title")}</h1>
+        {error ? (
+          <div className="notice notice-error">{error}</div>
+        ) : (
+          <p className="muted">{t("common.loading")}</p>
+        )}
       </section>
     );
   }
@@ -74,30 +80,30 @@ export default function ManagerSession() {
     <section>
       <p>
         <Link to="/entretien-manager" className="muted">
-          ← Entretien manager
+          {t("manager.back")}
         </Link>
       </p>
-      <h1>Entretien manager</h1>
+      <h1>{t("manager.title")}</h1>
       <ScenarioCard question={session.question} />
       <Conversation turns={session.turns} />
       {busy && (
         <p className="muted" role="status">
-          {BUSY_LABELS[busy]}
+          {t(BUSY_LABELS[busy])}
         </p>
       )}
       {error && <div className="notice notice-error">{error}</div>}
       {waitingRelance && !busy && (
         <div className="card">
-          <p className="muted">La relance du manager n&apos;a pas pu être obtenue.</p>
+          <p className="muted">{t("manager.followupMissing")}</p>
           <button type="button" className="btn" onClick={() => void run("relance", () => requestRelance(sessionId))}>
-            Réessayer la relance
+            {t("manager.retryFollowup")}
           </button>
         </div>
       )}
       {canAnswer && (
         <>
           <p className="muted">
-            Échange {session.answers_count + 1} sur {session.max_answers}
+            {t("manager.exchange", { n: session.answers_count + 1, max: session.max_answers })}
           </p>
           <AnswerComposer busy={busy !== null} onSubmit={handleSubmit} />
         </>
@@ -110,7 +116,7 @@ export default function ManagerSession() {
             disabled={busy !== null}
             onClick={() => void run("feedback", () => requestFeedback(sessionId))}
           >
-            Terminer et obtenir le retour
+            {t("manager.finish")}
           </button>
         </div>
       )}
@@ -119,10 +125,10 @@ export default function ManagerSession() {
           <FeedbackView feedback={session.feedback} />
           <div className="finish">
             <Link to="/entretien-manager" className="btn btn-primary">
-              Nouvelle question
+              {t("manager.newQuestion")}
             </Link>
             <Link to="/historique" className="btn">
-              Historique
+              {t("history.title")}
             </Link>
           </div>
         </>

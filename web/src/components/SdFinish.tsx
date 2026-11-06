@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useI18n } from "../i18n";
 
 interface SdFinishProps {
   finished: boolean;
@@ -7,25 +8,26 @@ interface SdFinishProps {
 }
 
 export default function SdFinish({ finished, busy, onFinish }: SdFinishProps) {
+  const { t } = useI18n();
   const [confirming, setConfirming] = useState(false);
 
   if (finished) {
     return (
       <p className="notice" role="status">
-        Session terminée. Ton schéma et ta discussion sont conservés.
+        {t("finish.done")}
       </p>
     );
   }
   if (!confirming) {
     return (
       <button type="button" className="btn btn-primary" onClick={() => setConfirming(true)}>
-        Terminer et obtenir la correction
+        {t("finish.button")}
       </button>
     );
   }
   return (
-    <div className="notice" role="alertdialog" aria-label="Confirmer la fin de la session">
-      <p>Terminer la session ? Tu ne pourras plus écrire ni modifier le schéma.</p>
+    <div className="notice" role="alertdialog" aria-label={t("finish.confirmAria")}>
+      <p>{t("finish.confirmText")}</p>
       <div className="setup-actions">
         <button
           type="button"
@@ -33,10 +35,10 @@ export default function SdFinish({ finished, busy, onFinish }: SdFinishProps) {
           disabled={busy}
           onClick={() => void onFinish()}
         >
-          Oui, terminer
+          {t("finish.yes")}
         </button>
         <button type="button" className="btn" disabled={busy} onClick={() => setConfirming(false)}>
-          Annuler
+          {t("common.cancel")}
         </button>
       </div>
     </div>

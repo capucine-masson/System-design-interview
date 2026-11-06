@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from api import sd, sd_correction, sd_db
 from api.config import Settings
-from api.deps import get_conn, get_llm_client, get_settings
+from api.deps import get_conn, get_llm_client, get_request_lang, get_settings
+from api.lang import Lang, msg
 from api.llm import LLMClient
 from api.sd_catalog import CASE_TYPES
 from api.sd_correction_models import CorrectionBundle
@@ -28,11 +29,12 @@ router = APIRouter(prefix="/api/sd")
 
 
 @router.get("/case-types")
-def case_types() -> list[CaseTypeOut]:
-    """Types de cas disponibles (catalogue côté serveur)."""
+def case_types(lang: Lang = Depends(get_request_lang)) -> list[CaseTypeOut]:
+    """Types de cas disponibles (catalogue côté serveur, dans la langue demandée)."""
+    localized = [t.localized(lang) for t in CASE_TYPES]
     return [
         CaseTypeOut(slug=t.slug, famille=t.famille, titre=t.titre, description=t.description)
-        for t in CASE_TYPES
+        for t in localized
     ]
 
 
@@ -42,23 +44,35 @@ def generate_case(
     conn: sqlite3.Connection = Depends(get_conn),
     settings: Settings = Depends(get_settings),
     client: LLMClient = Depends(get_llm_client),
+    lang: Lang = Depends(get_request_lang),
 ) -> CaseOut:
     """Génère un brief avec l'IA (action explicite) et l'ajoute à la banque."""
-    return sd.generate_case(conn, settings, client, body.type)
+    return sd.generate_case(conn, settings, client, body.type, lang)
 
 
 @router.get("/cases")
-def cases(type: str | None = None, conn: sqlite3.Connection = Depends(get_conn)) -> list[CaseOut]:
-    """Banque de cas déjà générés."""
-    return sd_db.list_cases(conn, type)
+def cases(
+    type: str | None = None,
+    conn: sqlite3.Connection = Depends(get_conn),
+    lang: Lang = Depends(get_request_lang),
+) -> list[CaseOut]:
+    """Banque de cas déjà générés, dans la langue demandée."""
+    return sd_db.list_cases(conn, type, lang)
 
 
 @router.get("/cases/draw")
-def draw_case(type: str | None = None, conn: sqlite3.Connection = Depends(get_conn)) -> CaseOut:
-    """Tire un cas de la banque, sans appel IA."""
-    case = sd_db.draw_case(conn, type)
+def draw_case(
+    type: str | None = None,
+    conn: sqlite3.Connection = Depends(get_conn),
+    lang: Lang = Depends(get_request_lang),
+) -> CaseOut:
+    """Tire un cas de la banque (dans la langue demandée), sans appel IA."""
+    case = sd_db.draw_case(conn, type, lang)
     if case is None:
-        raise HTTPException(sd.HTTP_NOT_FOUND, "Aucun cas en banque pour ce type.")
+        raise HTTPException(
+            sd.HTTP_NOT_FOUND,
+            msg("Aucun cas en banque pour ce type.", "No case in the bank for this type."),
+        )
     return case
 
 
@@ -115,7 +129,9 @@ def latest_scene(session_id: int, conn: sqlite3.Connection = Depends(get_conn)) 
     sd.require_session(conn, session_id)
     scene = sd_db.get_scene(conn, session_id, None)
     if scene is None:
-        raise HTTPException(sd.HTTP_NOT_FOUND, "Aucun schéma enregistré.")
+        raise HTTPException(
+            sd.HTTP_NOT_FOUND, msg("Aucun schéma enregistré.", "No diagram saved yet.")
+        )
     return scene
 
 
@@ -136,7 +152,7 @@ def scene_version(
     sd.require_session(conn, session_id)
     scene = sd_db.get_scene(conn, session_id, version)
     if scene is None:
-        raise HTTPException(sd.HTTP_NOT_FOUND, "Version introuvable.")
+        raise HTTPException(sd.HTTP_NOT_FOUND, msg("Version introuvable.", "Version not found."))
     return scene
 
 

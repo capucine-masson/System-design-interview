@@ -1,3 +1,4 @@
+import { useI18n } from "../i18n";
 import { CRITERIA, MAX_NOTE } from "../managerLabels";
 import type { Feedback, ReponseOrale } from "../types";
 
@@ -18,15 +19,16 @@ function SpokenBlock({ title, items }: { title: string; items: string[] }) {
 }
 
 function SpokenAnswer({ answer }: { answer: ReponseOrale }) {
+  const { t } = useI18n();
   return (
     <div className="spoken">
       <div className="spoken-block spoken-decision">
-        <h4>Ma décision</h4>
+        <h4>{t("feedback.myDecision")}</h4>
         <p>{answer.decision}</p>
       </div>
-      <SpokenBlock title="Mes actions" items={answer.actions} />
-      <SpokenBlock title="Le compromis" items={answer.compromis} />
-      <SpokenBlock title="Parties prenantes" items={answer.parties_prenantes} />
+      <SpokenBlock title={t("feedback.myActions")} items={answer.actions} />
+      <SpokenBlock title={t("feedback.tradeoff")} items={answer.compromis} />
+      <SpokenBlock title={t("feedback.stakeholders")} items={answer.parties_prenantes} />
     </div>
   );
 }
@@ -46,12 +48,13 @@ function Bullets({ title, items }: { title: string; items: string[] }) {
 }
 
 export default function FeedbackView({ feedback }: { feedback: Feedback }) {
+  const { t } = useI18n();
   const values = CRITERIA.map((criterion) => feedback.notes[criterion.key]);
   const average = values.reduce((sum, value) => sum + value, 0) / values.length;
   return (
-    <section className="card feedback" aria-label="Retour du manager">
+    <section className="card feedback" aria-label={t("feedback.title")}>
       <div className="page-head">
-        <h2>Retour du manager</h2>
+        <h2>{t("feedback.title")}</h2>
         <p className="feedback-average">
           {average.toFixed(DECIMALS)} <span className="muted">/ {MAX_NOTE}</span>
         </p>
@@ -59,7 +62,7 @@ export default function FeedbackView({ feedback }: { feedback: Feedback }) {
       <ul className="notes">
         {CRITERIA.map((criterion) => (
           <li key={criterion.key}>
-            <span>{criterion.label}</span>
+            <span>{t(criterion.label)}</span>
             <progress max={MAX_NOTE} value={feedback.notes[criterion.key]} />
             <strong>
               {feedback.notes[criterion.key]}/{MAX_NOTE}
@@ -68,13 +71,13 @@ export default function FeedbackView({ feedback }: { feedback: Feedback }) {
         ))}
       </ul>
       <div className="feedback-lists">
-        <Bullets title="Points forts" items={feedback.points_forts} />
-        <Bullets title="Points faibles" items={feedback.points_faibles} />
-        <Bullets title="Oublis" items={feedback.oublis} />
+        <Bullets title={t("feedback.strengths")} items={feedback.points_forts} />
+        <Bullets title={t("feedback.weaknesses")} items={feedback.points_faibles} />
+        <Bullets title={t("feedback.omissions")} items={feedback.oublis} />
       </div>
-      <h3>Version améliorée, à dire à l&apos;oral</h3>
+      <h3>{t("feedback.improved")}</h3>
       <SpokenAnswer answer={feedback.reponse_amelioree} />
-      <h3>Pour la prochaine fois</h3>
+      <h3>{t("feedback.nextTime")}</h3>
       <ol>
         {feedback.conseils.map((tip) => (
           <li key={tip}>{tip}</li>

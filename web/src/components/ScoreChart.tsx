@@ -1,3 +1,4 @@
+import { useI18n } from "../i18n";
 import { MAX_NOTE } from "../managerLabels";
 import type { SessionSummary } from "../types";
 
@@ -10,15 +11,12 @@ const MIN_NOTE = 1;
 
 /** Évolution de la moyenne des notes, de la plus ancienne session à la plus récente. */
 export default function ScoreChart({ sessions }: { sessions: SessionSummary[] }) {
+  const { t } = useI18n();
   const scored = sessions
     .filter((s) => s.moyenne !== null)
     .sort((a, b) => a.id - b.id);
   if (scored.length < MIN_POINTS) {
-    return (
-      <p className="muted">
-        Termine au moins deux entretiens avec retour pour voir l&apos;évolution de tes notes.
-      </p>
-    );
+    return <p className="muted">{t("chart.needTwo")}</p>;
   }
   const x = (index: number): number =>
     PAD_X + (index * (WIDTH - 2 * PAD_X)) / (scored.length - 1);
@@ -31,7 +29,7 @@ export default function ScoreChart({ sessions }: { sessions: SessionSummary[] })
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
       className="chart"
       role="img"
-      aria-label="Évolution de la moyenne des notes"
+      aria-label={t("chart.aria")}
     >
       {grid.map((value) => (
         <g key={value}>
@@ -44,7 +42,7 @@ export default function ScoreChart({ sessions }: { sessions: SessionSummary[] })
       <polyline points={points} className="chart-line" />
       {scored.map((s, i) => (
         <circle key={s.id} cx={x(i)} cy={y(s.moyenne ?? MIN_NOTE)} r={4} className="chart-dot">
-          <title>{`Session ${s.id} : ${s.moyenne}/${MAX_NOTE}`}</title>
+          <title>{t("chart.point", { id: s.id, average: s.moyenne ?? MIN_NOTE, max: MAX_NOTE })}</title>
         </circle>
       ))}
     </svg>

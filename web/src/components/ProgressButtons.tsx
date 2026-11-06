@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { type TKey, useI18n } from "../i18n";
 import type { Statut } from "../types";
 
 interface ProgressButtonsProps {
@@ -19,10 +20,10 @@ const ICON_PROPS = {
   "aria-hidden": true,
 } as const;
 
-const OPTIONS: { value: Statut; label: string; icon: ReactNode }[] = [
+const OPTIONS: { value: Statut; label: TKey; icon: ReactNode }[] = [
   {
     value: "maitrisee",
-    label: "Maîtrisée",
+    label: "progress.mastered",
     icon: (
       <svg {...ICON_PROPS}>
         <path d="M5 12.5l4.5 4.5L19 7.5" />
@@ -31,7 +32,7 @@ const OPTIONS: { value: Statut; label: string; icon: ReactNode }[] = [
   },
   {
     value: "a_revoir",
-    label: "À revoir",
+    label: "progress.toReview",
     icon: (
       <svg {...ICON_PROPS}>
         <path d="M20 12a8 8 0 1 1-2.4-5.7" />
@@ -42,8 +43,9 @@ const OPTIONS: { value: Statut; label: string; icon: ReactNode }[] = [
 ];
 
 export default function ProgressButtons({ statut, disabled, onChange }: ProgressButtonsProps) {
+  const { t } = useI18n();
   return (
-    <div className="progress-buttons" role="group" aria-label="Suivi de la carte">
+    <div className="progress-buttons" role="group" aria-label={t("progress.group")}>
       {OPTIONS.map((option) => {
         const active = statut === option.value;
         return (
@@ -51,8 +53,8 @@ export default function ProgressButtons({ statut, disabled, onChange }: Progress
             key={option.value}
             type="button"
             className={`icon-btn icon-btn-${option.value}${active ? " is-active" : ""}`}
-            aria-label={option.label}
-            title={option.label}
+            aria-label={t(option.label)}
+            title={t(option.label)}
             aria-pressed={active}
             disabled={disabled}
             onClick={() => onChange(active ? null : option.value)}

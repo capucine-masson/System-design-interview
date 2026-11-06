@@ -3,9 +3,11 @@ import { Link } from "react-router-dom";
 import { getThemes } from "../api";
 import EmptyState from "../components/EmptyState";
 import ProgressBar from "../components/ProgressBar";
+import { useI18n } from "../i18n";
 import type { Theme } from "../types";
 
 export default function Cours() {
+  const { lang, t } = useI18n();
   const [themes, setThemes] = useState<Theme[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -13,24 +15,24 @@ export default function Cours() {
     getThemes()
       .then(setThemes)
       .catch((err: Error) => setError(err.message));
-  }, []);
+  }, [lang]);
 
   return (
     <section>
       <div className="page-head">
-        <h1>Cours</h1>
+        <h1>{t("courses.title")}</h1>
         {themes && themes.length > 0 && (
           <Link to="/cours/revision" className="btn btn-primary">
-            Révision aléatoire
+            {t("courses.randomReview")}
           </Link>
         )}
       </div>
       {error && <div className="card error">{error}</div>}
-      {!error && !themes && <p className="muted">Chargement…</p>}
+      {!error && !themes && <p className="muted">{t("common.loading")}</p>}
       {themes && themes.length === 0 && (
         <EmptyState
-          title="Aucun thème"
-          hint="Le contenu n'est pas encore en base : lance « uv run python -m api.seed »."
+          title={t("courses.noThemes")}
+          hint={t("courses.noThemesHint")}
         />
       )}
       {themes && themes.length > 0 && (
